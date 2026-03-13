@@ -192,15 +192,17 @@ const CTASection = () => (
   </section>
 );
 
-const Index = () => (
-  <main>
-    <HeroSection />
-    <HowItWorks />
-    <FeaturedProducts />
-    <ImpactMetrics />
-    <PartnersSection />
-    <CTASection />
-  </main>
-);
+function Index() {
+  return (
+    <main>
+      <HeroSection />
+      <HowItWorks />
+      <FeaturedProducts />
+      <ImpactMetrics />
+      <PartnersSection />
+      <CTASection />
+    </main>
+  );
+}
 
 export default Index;
