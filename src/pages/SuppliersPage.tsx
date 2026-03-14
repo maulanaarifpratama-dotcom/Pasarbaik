@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, CheckCircle, Package, Users, Calendar, Building2, ArrowRight } from "lucide-react";
+import { MapPin, CheckCircle, Package, Users, Calendar, Building2, ArrowRight, Leaf } from "lucide-react";
 import { getSupplier, getProgram, getOrganization, getProductsBySupplier, suppliers } from "@/data/mockData";
 
 function SuppliersList() {
