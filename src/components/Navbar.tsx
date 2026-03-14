@@ -7,11 +7,12 @@ const navItems = [
   { label: "Home", path: "/" },
   { label: "Products", path: "/products" },
   { label: "Suppliers", path: "/suppliers" },
+  { label: "Programs", path: "/programs" },
   { label: "Impact", path: "/impact" },
   { label: "For CSR", path: "/csr" },
 ];
 
-const Navbar = () => {
+function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const isHome = location.pathname === "/";
@@ -24,7 +25,7 @@ const Navbar = () => {
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden lg:flex items-center gap-1">
           {navItems.map((item) => (
             <Link
               key={item.path}
@@ -38,8 +39,13 @@ const Navbar = () => {
               {item.label}
             </Link>
           ))}
+          <Link to="/login">
+            <Button variant="hero-outline" size="sm" className="ml-2">
+              Sign In
+            </Button>
+          </Link>
           <Link to="/rfq">
-            <Button variant="hero" size="sm" className="ml-3">
+            <Button variant="hero" size="sm" className="ml-1">
               Request Quote
             </Button>
           </Link>
@@ -47,7 +53,7 @@ const Navbar = () => {
 
         {/* Mobile toggle */}
         <button
-          className="md:hidden text-primary-foreground"
+          className="lg:hidden text-primary-foreground"
           onClick={() => setMobileOpen(!mobileOpen)}
         >
           {mobileOpen ? <X size={24} /> : <Menu size={24} />}
@@ -56,7 +62,7 @@ const Navbar = () => {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden bg-primary border-t border-primary-foreground/10 pb-4">
+        <div className="lg:hidden bg-primary border-t border-primary-foreground/10 pb-4">
           {navItems.map((item) => (
             <Link
               key={item.path}
@@ -71,17 +77,18 @@ const Navbar = () => {
               {item.label}
             </Link>
           ))}
-          <div className="px-6 pt-2">
+          <div className="px-6 pt-2 space-y-2">
+            <Link to="/login" onClick={() => setMobileOpen(false)}>
+              <Button variant="hero-outline" size="sm" className="w-full">Sign In</Button>
+            </Link>
             <Link to="/rfq" onClick={() => setMobileOpen(false)}>
-              <Button variant="hero" size="sm" className="w-full">
-                Request Quote
-              </Button>
+              <Button variant="hero" size="sm" className="w-full">Request Quote</Button>
             </Link>
           </div>
         </div>
       )}
     </nav>
   );
-};
+}
 
 export default Navbar;

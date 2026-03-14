@@ -34,13 +34,13 @@ const RFQPage = () => {
       <section className="bg-primary py-14">
         <div className="container mx-auto px-4">
           <h1 className="font-display text-3xl md:text-4xl font-bold text-primary-foreground mb-2">Request for Quotation</h1>
-          <p className="text-primary-foreground/70">Sampaikan kebutuhan procurement Anda, kami carikan supplier UMKM terbaik.</p>
+          <p className="text-primary-foreground/70">Sampaikan kebutuhan procurement Anda — kami carikan supplier UMKM berdampak terbaik dari program terverifikasi.</p>
         </div>
       </section>
 
       <section className="container mx-auto px-4 py-10 max-w-2xl">
         <form onSubmit={handleSubmit} className="space-y-6 bg-card p-8 rounded-xl border border-border shadow-sm">
-          <h2 className="font-display text-xl font-semibold text-card-foreground">Informasi Perusahaan</h2>
+          <h2 className="font-display text-xl font-semibold text-card-foreground">Company Information</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -49,7 +49,7 @@ const RFQPage = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="contact">Contact Person</Label>
-              <Input id="contact" required placeholder="Nama lengkap" />
+              <Input id="contact" required placeholder="Full name" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -62,19 +62,18 @@ const RFQPage = () => {
           </div>
 
           <div className="border-t border-border pt-6">
-            <h2 className="font-display text-xl font-semibold text-card-foreground mb-4">Detail Kebutuhan</h2>
+            <h2 className="font-display text-xl font-semibold text-card-foreground mb-4">Procurement Details</h2>
 
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Product Category</Label>
                 <Select required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih kategori produk" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="corporate-gift">Corporate Gift</SelectItem>
-                    <SelectItem value="food">Food Product</SelectItem>
-                    <SelectItem value="craft">Craft</SelectItem>
+                    <SelectItem value="specialty-food">Specialty Food</SelectItem>
+                    <SelectItem value="eco-product">Eco Product</SelectItem>
+                    <SelectItem value="textile">Textile & Craft</SelectItem>
                     <SelectItem value="custom">Custom Product</SelectItem>
                   </SelectContent>
                 </Select>
@@ -101,14 +100,12 @@ const RFQPage = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="notes">Additional Notes</Label>
-                <Textarea id="notes" placeholder="Jelaskan detail kebutuhan Anda..." rows={4} />
+                <Textarea id="notes" placeholder="Describe your requirements, preferred certifications, impact preferences, etc." rows={4} />
               </div>
             </div>
           </div>
 
-          <Button type="submit" size="lg" className="w-full">
-            Submit RFQ
-          </Button>
+          <Button type="submit" size="lg" className="w-full">Submit RFQ</Button>
         </form>
       </section>
     </main>
