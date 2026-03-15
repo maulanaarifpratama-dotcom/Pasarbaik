@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1011,12 +1011,27 @@ function AdminRFQ() {
 }
 
 function AdminContent() {
-  const [tab, setTab] = useState<AdminTab>("overview");
   const { user } = useAuth();
   const { data: products } = useProducts();
   const { data: suppliers } = useSuppliers();
   const { data: programs } = usePrograms();
   const { data: partners } = usePartners();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const pathSegment = location.pathname.replace("/admin", "").replace("/", "") || "overview";
+  const tab = (["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "reports"].includes(pathSegment) ? pathSegment : "overview") as AdminTab;
+
+  const tabRouteMap: Record<AdminTab, string> = {
+    overview: "/admin",
+    products: "/admin/products",
+    suppliers: "/admin/suppliers",
+    programs: "/admin/programs",
+    partners: "/admin/partners",
+    pages: "/admin/pages",
+    rfq: "/admin/rfq",
+    reports: "/admin/reports",
+  };
 
   return (
     <div className="flex-1 flex flex-col">
@@ -1028,7 +1043,7 @@ function AdminContent() {
       <main className="flex-1 p-6 bg-background overflow-auto">
         <div className="flex gap-2 mb-6 flex-wrap">
           {(["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "reports"] as AdminTab[]).map((t) => (
-            <button key={t} onClick={() => setTab(t)}
+            <button key={t} onClick={() => navigate(tabRouteMap[t])}
               className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${tab === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
               {t}
             </button>
