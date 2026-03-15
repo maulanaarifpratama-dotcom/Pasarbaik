@@ -27,17 +27,19 @@ function LoginPage() {
         toast.error(error.message);
       } else {
         toast.success("Signed in successfully!");
-        // Check if user has admin role
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { data: roles } = await supabase
             .from("user_roles")
             .select("role")
             .eq("user_id", user.id);
-          const isAdmin = roles?.some((r) => r.role === "admin");
-          navigate(isAdmin ? "/admin" : "/dashboard");
+          const roleList = roles?.map(r => r.role) || [];
+          if (roleList.includes("admin")) navigate("/admin");
+          else if (roleList.includes("editor")) navigate("/admin");
+          else if (roleList.includes("partner") || roleList.includes("supplier")) navigate("/dashboard");
+          else navigate("/");
         } else {
-          navigate("/dashboard");
+          navigate("/");
         }
       }
     } else {
