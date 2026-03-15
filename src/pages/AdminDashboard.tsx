@@ -26,7 +26,7 @@ import { AdminSuppliers } from "@/components/admin/SupplierEditor";
 import { AdminUsers } from "@/components/admin/UserRolesManager";
 
 const sidebarItems = [
-  { title: "Dashboard", url: "/dashboard", icon: BarChart3 },
+  { title: "Dashboard", url: "/admin", icon: BarChart3 },
   { title: "Products", url: "/admin/products", icon: Package },
   { title: "Suppliers", url: "/admin/suppliers", icon: Users },
   { title: "Programs", url: "/admin/programs", icon: Building2 },
