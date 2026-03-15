@@ -25,29 +25,50 @@ function LoginPage() {
       const { data: signInData, error } = await signIn(email, password);
       if (error) {
         toast.error(error.message);
-      } else {
-        toast.success("Signed in successfully!");
-        const signedInUser = signInData?.user ?? (await supabase.auth.getUser()).data.user;
+        setLoading(false);
+        return;
+      }
 
-        if (signedInUser) {
-          const { data: roles, error: rolesError } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", signedInUser.id);
+      toast.success("Signed in successfully!");
 
-          if (rolesError) {
-            toast.error(rolesError.message);
-            navigate("/");
-          } else {
-            const roleList = roles?.map(r => r.role) || [];
-            if (roleList.includes("admin")) navigate("/admin");
-            else if (roleList.includes("partner") || roleList.includes("supplier")) navigate("/partner");
-            else if (roleList.includes("editor")) navigate("/dashboard");
-            else navigate("/");
-          }
-        } else {
-          navigate("/");
+      const signedInUser = signInData?.user ?? (await supabase.auth.getUser()).data.user;
+
+      if (!signedInUser) {
+        navigate("/");
+        setLoading(false);
+        return;
+      }
+
+      const fetchRoles = async (attempt = 0): Promise<string[]> => {
+        const { data: roles, error: rolesError } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", signedInUser.id);
+
+        if (rolesError) {
+          throw rolesError;
         }
+
+        const roleList = roles?.map((r) => r.role) || [];
+
+        if (roleList.length === 0 && attempt < 2) {
+          await new Promise((resolve) => setTimeout(resolve, 150));
+          return fetchRoles(attempt + 1);
+        }
+
+        return roleList;
+      };
+
+      try {
+        const roleList = await fetchRoles();
+
+        if (roleList.includes("admin")) navigate("/admin");
+        else if (roleList.includes("partner") || roleList.includes("supplier")) navigate("/partner");
+        else if (roleList.includes("editor")) navigate("/dashboard");
+        else navigate("/");
+      } catch (rolesError: any) {
+        toast.error(rolesError.message || "Failed to load user roles");
+        navigate("/");
       }
     } else {
       const { error } = await signUp(email, password, name);
