@@ -3,113 +3,106 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import { Briefcase } from "lucide-react";
 
-const RFQPage = () => {
-  const [submitted, setSubmitted] = useState(false);
+function RFQPage() {
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSubmitted(true);
-    toast.success("RFQ berhasil dikirim!");
+    setLoading(true);
+    await new Promise((r) => setTimeout(r, 1000));
+    toast.success("RFQ submitted successfully! We'll contact you soon.");
+    (e.target as HTMLFormElement).reset();
+    setLoading(false);
   };
-
-  if (submitted) {
-    return (
-      <main className="pt-16 min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-4">
-          <CheckCircle className="mx-auto mb-4 text-primary" size={64} />
-          <h2 className="font-display text-2xl font-bold text-foreground mb-2">RFQ Terkirim!</h2>
-          <p className="text-muted-foreground mb-6">Tim PasarBaik akan menghubungi Anda dalam 1-2 hari kerja dengan rekomendasi supplier terbaik.</p>
-          <Button onClick={() => setSubmitted(false)}>Kirim RFQ Lain</Button>
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main className="pt-16">
-      <section className="bg-primary py-14">
+      <section className="bg-primary py-12">
         <div className="container mx-auto px-4">
-          <h1 className="font-display text-3xl md:text-4xl font-bold text-primary-foreground mb-2">Request for Quotation</h1>
-          <p className="text-primary-foreground/70">Sampaikan kebutuhan procurement Anda — kami carikan supplier UMKM berdampak terbaik dari program terverifikasi.</p>
+          <h1 className="font-display text-3xl font-bold text-primary-foreground">Request for Quotation</h1>
+          <p className="text-primary-foreground/60 mt-2">Submit your procurement needs for impact products</p>
         </div>
       </section>
 
-      <section className="container mx-auto px-4 py-10 max-w-2xl">
-        <form onSubmit={handleSubmit} className="space-y-6 bg-card p-8 rounded-xl border border-border shadow-sm">
-          <h2 className="font-display text-xl font-semibold text-card-foreground">Company Information</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="company">Company Name</Label>
-              <Input id="company" required placeholder="PT Example Indonesia" />
+      <section className="container mx-auto px-4 py-8 max-w-2xl">
+        <div className="bg-card rounded-xl border border-border p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Briefcase className="text-primary" size={24} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="contact">Contact Person</Label>
-              <Input id="contact" required placeholder="Full name" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" required placeholder="email@company.com" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" type="tel" required placeholder="+62 812 3456 7890" />
+            <div>
+              <h2 className="font-display text-xl font-semibold text-foreground">Submit RFQ</h2>
+              <p className="text-sm text-muted-foreground">Fill in your requirements below</p>
             </div>
           </div>
 
-          <div className="border-t border-border pt-6">
-            <h2 className="font-display text-xl font-semibold text-card-foreground mb-4">Procurement Details</h2>
-
-            <div className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Company Name</Label>
+                <Input name="company" required placeholder="PT Example Indonesia" />
+              </div>
+              <div className="space-y-2">
+                <Label>Contact Person</Label>
+                <Input name="contact" required placeholder="Your name" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input name="email" type="email" required placeholder="email@company.com" />
+              </div>
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input name="phone" placeholder="+62 812 3456 7890" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Product Category</Label>
-                <Select required>
-                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="corporate-gift">Corporate Gift</SelectItem>
-                    <SelectItem value="specialty-food">Specialty Food</SelectItem>
-                    <SelectItem value="eco-product">Eco Product</SelectItem>
-                    <SelectItem value="textile">Textile & Craft</SelectItem>
-                    <SelectItem value="custom">Custom Product</SelectItem>
-                  </SelectContent>
-                </Select>
+                <select name="category" className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground">
+                  <option value="">Select category</option>
+                  <option value="Textiles">Textiles</option>
+                  <option value="Food & Beverage">Food & Beverage</option>
+                  <option value="Eco Products">Eco Products</option>
+                  <option value="Crafts">Crafts</option>
+                  <option value="Corporate Gifts">Corporate Gifts</option>
+                </select>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="qty">Quantity</Label>
-                  <Input id="qty" type="number" required placeholder="2000" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="price">Target Price (per unit)</Label>
-                  <Input id="price" placeholder="Rp 150.000" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="deadline">Deadline</Label>
-                  <Input id="deadline" type="date" required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location">Delivery Location</Label>
-                  <Input id="location" required placeholder="Jakarta" />
-                </div>
-              </div>
-
               <div className="space-y-2">
-                <Label htmlFor="notes">Additional Notes</Label>
-                <Textarea id="notes" placeholder="Describe your requirements, preferred certifications, impact preferences, etc." rows={4} />
+                <Label>Quantity</Label>
+                <Input name="quantity" placeholder="e.g. 500 pcs" />
               </div>
             </div>
-          </div>
-
-          <Button type="submit" size="lg" className="w-full">Submit RFQ</Button>
-        </form>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Target Price</Label>
+                <Input name="price" placeholder="e.g. IDR 100,000/pcs" />
+              </div>
+              <div className="space-y-2">
+                <Label>Deadline</Label>
+                <Input name="deadline" type="date" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Delivery Location</Label>
+              <Input name="location" placeholder="City, Province" />
+            </div>
+            <div className="space-y-2">
+              <Label>Additional Notes</Label>
+              <Textarea name="notes" placeholder="Describe your requirements..." rows={4} />
+            </div>
+            <Button type="submit" className="w-full" size="lg" disabled={loading}>
+              {loading ? "Submitting..." : "Submit RFQ"}
+            </Button>
+          </form>
+        </div>
       </section>
     </main>
   );
-};
+}
 
 export default RFQPage;
