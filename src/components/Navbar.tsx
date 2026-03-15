@@ -1,9 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const navItems = [
   { label: "Home", path: "/" },
@@ -19,21 +19,7 @@ function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const isHome = location.pathname === "/" || location.pathname === "/home";
   const { user, signOut } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .then(({ data }) => {
-          setIsAdmin(data?.some((r) => r.role === "admin") || false);
-        });
-    } else {
-      setIsAdmin(false);
-    }
-  }, [user]);
+  const { isAdmin, isEditor, isPartner } = useUserRole();
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-colors ${isHome ? "bg-primary/80 backdrop-blur-md" : "bg-primary shadow-md"}`}>
