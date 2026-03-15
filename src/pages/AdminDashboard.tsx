@@ -902,6 +902,7 @@ function AdminContent() {
         {tab === "suppliers" && <AdminSuppliers />}
         {tab === "programs" && <AdminPrograms />}
         {tab === "partners" && <AdminPartners />}
+        {tab === "pages" && <AdminPages />}
         {tab === "rfq" && <AdminRFQ />}
         {tab === "reports" && <AdminReports />}
       </main>
