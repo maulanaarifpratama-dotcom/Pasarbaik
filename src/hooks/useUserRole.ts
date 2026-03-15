@@ -8,31 +8,46 @@ export function useUserRole() {
   const { user } = useAuth();
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     if (!user) {
       setRoles([]);
+      setResolvedUserId(null);
       setLoading(false);
       return;
     }
 
-    // Reset loading when user changes to prevent premature redirects
     setLoading(true);
+    setResolvedUserId(null);
 
     supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
       .then(({ data, error }) => {
+        if (!isMounted) return;
+
         if (error) {
           console.error("Error fetching roles:", error);
           setRoles([]);
         } else {
           setRoles((data?.map((r) => r.role) as AppRole[]) || []);
         }
+
+        setResolvedUserId(user.id);
         setLoading(false);
       });
-  }, [user]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
+
+  const isRoleResolvedForCurrentUser = !user || resolvedUserId === user.id;
+  const isLoading = loading || !isRoleResolvedForCurrentUser;
 
   const hasRole = (role: AppRole) => roles.includes(role);
   const isAdmin = hasRole("admin");
@@ -40,7 +55,6 @@ export function useUserRole() {
   const isPartner = hasRole("partner") || hasRole("supplier");
   const isUser = hasRole("user");
 
-  // Determine highest priority role for routing
   const primaryRole: AppRole | null = isAdmin
     ? "admin"
     : isEditor
@@ -59,5 +73,5 @@ export function useUserRole() {
     ? "/partner"
     : "/";
 
-  return { roles, loading, hasRole, isAdmin, isEditor, isPartner, isUser, primaryRole, dashboardRoute };
+  return { roles, loading: isLoading, hasRole, isAdmin, isEditor, isPartner, isUser, primaryRole, dashboardRoute };
 }
