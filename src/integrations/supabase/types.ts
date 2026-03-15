@@ -386,6 +386,7 @@ export type Database = {
           slug: string | null
           type: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           contact?: string | null
@@ -398,6 +399,7 @@ export type Database = {
           slug?: string | null
           type?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           contact?: string | null
@@ -410,6 +412,7 @@ export type Database = {
           slug?: string | null
           type?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

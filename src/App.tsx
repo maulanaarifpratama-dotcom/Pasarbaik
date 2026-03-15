@@ -16,13 +16,14 @@ import { ProgramsList, ProgramDetail } from "./pages/ProgramsPage";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import PartnerDashboard from "./pages/PartnerDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 function AppLayout() {
   const location = useLocation();
-  const isDashboard = location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin");
+  const isDashboard = location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin") || location.pathname.startsWith("/partner");
 
   return (
     <>
@@ -42,6 +43,7 @@ function AppLayout() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/dashboard/*" element={<DashboardPage />} />
         <Route path="/admin/*" element={<AdminDashboard />} />
+        <Route path="/partner/*" element={<PartnerDashboard />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!isDashboard && <Footer />}

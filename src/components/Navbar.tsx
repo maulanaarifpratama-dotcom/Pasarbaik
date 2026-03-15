@@ -47,9 +47,9 @@ function Navbar() {
                   <Button variant="hero-outline" size="sm" className="ml-2">Admin Panel</Button>
                 </Link>
               )}
-              {isPartner && (
-                <Link to="/dashboard">
-                  <Button variant="hero-outline" size="sm" className="ml-1">Dashboard</Button>
+              {isPartner && !isAdmin && !isEditor && (
+                <Link to="/partner">
+                  <Button variant="hero-outline" size="sm" className="ml-1">Partner Panel</Button>
                 </Link>
               )}
               <Button variant="hero" size="sm" className="ml-1" onClick={signOut}>Sign Out</Button>
