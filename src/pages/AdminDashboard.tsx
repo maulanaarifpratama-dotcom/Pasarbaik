@@ -83,11 +83,14 @@ function AdminProducts() {
   const [editItem, setEditItem] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editImageUrl, setEditImageUrl] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("products").delete().eq("id", id);
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from("products").delete().eq("id", deleteId);
     if (error) toast.error(error.message);
     else { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["products"] }); }
+    setDeleteId(null);
   };
 
   const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -167,6 +170,18 @@ function AdminProducts() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirm */}
+      <Dialog open={!!deleteId} onOpenChange={(v) => { if (!v) setDeleteId(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Confirm Delete</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Are you sure you want to delete this product? This action cannot be undone.</p>
+          <div className="flex gap-2 justify-end mt-4">
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {isLoading ? <Skeleton className="h-64" /> : (
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <table className="w-full text-sm">
@@ -196,7 +211,7 @@ function AdminProducts() {
                   <td className="p-4"><Badge variant="secondary">{p.status}</Badge></td>
                   <td className="p-4 text-right flex items-center justify-end gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil size={16} className="text-muted-foreground" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}><Trash2 size={16} className="text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(p.id)}><Trash2 size={16} className="text-destructive" /></Button>
                   </td>
                 </tr>
               ))}
@@ -216,11 +231,14 @@ function AdminSuppliers() {
   const [editItem, setEditItem] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editLogoUrl, setEditLogoUrl] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("suppliers").delete().eq("id", id);
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from("suppliers").delete().eq("id", deleteId);
     if (error) toast.error(error.message);
     else { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["suppliers"] }); }
+    setDeleteId(null);
   };
 
   const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -296,6 +314,18 @@ function AdminSuppliers() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirm */}
+      <Dialog open={!!deleteId} onOpenChange={(v) => { if (!v) setDeleteId(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Confirm Delete</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Are you sure you want to delete this supplier? This action cannot be undone.</p>
+          <div className="flex gap-2 justify-end mt-4">
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {isLoading ? <Skeleton className="h-64" /> : (
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <table className="w-full text-sm">
@@ -323,7 +353,7 @@ function AdminSuppliers() {
                   <td className="p-4 text-muted-foreground">{s.location}</td>
                   <td className="p-4 text-right flex items-center justify-end gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil size={16} className="text-muted-foreground" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(s.id)}><Trash2 size={16} className="text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(s.id)}><Trash2 size={16} className="text-destructive" /></Button>
                   </td>
                 </tr>
               ))}
