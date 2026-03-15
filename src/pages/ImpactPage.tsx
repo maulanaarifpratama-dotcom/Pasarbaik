@@ -44,9 +44,28 @@ function ImpactPage() {
   return (
     <main className="pt-16">
       <section className="bg-primary py-12">
-        <div className="container mx-auto px-4">
-          <h1 className="font-display text-3xl font-bold text-primary-foreground">Impact Dashboard</h1>
-          <p className="text-primary-foreground/60 mt-2">Measurable social impact from all programs</p>
+        <div className="container mx-auto px-4 flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-3xl font-bold text-primary-foreground">Impact Dashboard</h1>
+            <p className="text-primary-foreground/60 mt-2">Measurable social impact from all programs</p>
+          </div>
+          {!isLoading && (
+            <Button
+              variant="hero-outline"
+              size="sm"
+              onClick={() => generateImpactPDF({
+                suppliers: suppliers?.length || 0,
+                programs: programs?.length || 0,
+                products: products?.length || 0,
+                reports: reports || [],
+                latestMetrics: metrics,
+                latestBeneficiaries: latest?.beneficiaries || 0,
+                allSdgTags,
+              })}
+            >
+              <Download size={16} className="mr-1" /> Export PDF
+            </Button>
+          )}
         </div>
       </section>
 
