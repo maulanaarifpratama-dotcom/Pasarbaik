@@ -605,6 +605,7 @@ function AdminRFQ() {
   );
 }
 
+function AdminContent() {
   const [tab, setTab] = useState<AdminTab>("overview");
   const { user } = useAuth();
   const { data: products } = useProducts();
