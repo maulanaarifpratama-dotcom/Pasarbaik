@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useProducts, useSuppliers, usePrograms, usePartners, useImpactReports } from "@/hooks/useSupabaseQuery";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
