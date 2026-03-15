@@ -660,6 +660,7 @@ function AdminRFQ() {
         {tab === "suppliers" && <AdminSuppliers />}
         {tab === "programs" && <AdminPrograms />}
         {tab === "partners" && <AdminPartners />}
+        {tab === "rfq" && <AdminRFQ />}
         {tab === "reports" && <AdminReports />}
       </main>
     </div>
