@@ -353,7 +353,7 @@ function AdminSuppliers() {
                   <td className="p-4 text-muted-foreground">{s.location}</td>
                   <td className="p-4 text-right flex items-center justify-end gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil size={16} className="text-muted-foreground" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(s.id)}><Trash2 size={16} className="text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(s.id)}><Trash2 size={16} className="text-destructive" /></Button>
                   </td>
                 </tr>
               ))}
