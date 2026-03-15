@@ -21,6 +21,7 @@ import {
 import { ImageUpload } from "@/components/ImageUpload";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { AdminProducts } from "@/components/admin/ProductEditor";
+import { AdminSuppliers } from "@/components/admin/SupplierEditor";
 
 const sidebarItems = [
   { title: "Dashboard", url: "/dashboard", icon: BarChart3 },
