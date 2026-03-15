@@ -14,8 +14,8 @@ import {
   SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar,
 } from "@/components/ui/sidebar";
 import { NavLink } from "@/components/NavLink";
-import { BarChart3, Package, Users, Building2, FileText, LogOut, Handshake, Plus, Trash2, ImageIcon, Pencil } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { BarChart3, Package, Users, Building2, FileText, LogOut, Handshake, Plus, Trash2, ImageIcon, Pencil, Inbox, Eye } from "lucide-react";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -27,6 +27,7 @@ const sidebarItems = [
   { title: "Suppliers", url: "/admin/suppliers", icon: Users },
   { title: "Programs", url: "/admin/programs", icon: Building2 },
   { title: "Partners", url: "/admin/partners", icon: Handshake },
+  { title: "RFQ", url: "/admin/rfq", icon: Inbox },
   { title: "Reports", url: "/admin/reports", icon: FileText },
 ];
 
@@ -68,7 +69,7 @@ function AdminSidebar() {
   );
 }
 
-type AdminTab = "overview" | "products" | "suppliers" | "programs" | "partners" | "reports";
+type AdminTab = "overview" | "products" | "suppliers" | "programs" | "partners" | "rfq" | "reports";
 
 // --- CRUD Components ---
 
@@ -497,6 +498,113 @@ function AdminReports() {
   );
 }
 
+function AdminRFQ() {
+  const qc = useQueryClient();
+  const { data: rfqs, isLoading } = useQuery({
+    queryKey: ["rfq_requests"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("rfq_requests" as any).select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+  const [viewItem, setViewItem] = useState<any>(null);
+
+  const statusColors: Record<string, string> = {
+    pending: "bg-yellow-100 text-yellow-800",
+    reviewed: "bg-blue-100 text-blue-800",
+    accepted: "bg-green-100 text-green-800",
+    rejected: "bg-red-100 text-red-800",
+  };
+
+  const handleStatus = async (id: string, status: string) => {
+    const { error } = await supabase.from("rfq_requests" as any).update({ status } as any).eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success(`Status → ${status}`); qc.invalidateQueries({ queryKey: ["rfq_requests"] }); }
+  };
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("rfq_requests" as any).delete().eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["rfq_requests"] }); }
+  };
+
+  return (
+    <div>
+      <h2 className="font-display text-2xl font-bold text-foreground mb-6">RFQ Requests</h2>
+
+      {/* Detail Dialog */}
+      <Dialog open={!!viewItem} onOpenChange={(v) => { if (!v) setViewItem(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>RFQ Detail</DialogTitle></DialogHeader>
+          {viewItem && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-2">
+                <div><span className="text-muted-foreground">Company:</span> <strong>{viewItem.company}</strong></div>
+                <div><span className="text-muted-foreground">Contact:</span> <strong>{viewItem.contact_person}</strong></div>
+                <div><span className="text-muted-foreground">Email:</span> <strong>{viewItem.email}</strong></div>
+                <div><span className="text-muted-foreground">Phone:</span> <strong>{viewItem.phone || "-"}</strong></div>
+                <div><span className="text-muted-foreground">Category:</span> <strong>{viewItem.category || "-"}</strong></div>
+                <div><span className="text-muted-foreground">Quantity:</span> <strong>{viewItem.quantity || "-"}</strong></div>
+                <div><span className="text-muted-foreground">Target Price:</span> <strong>{viewItem.target_price || "-"}</strong></div>
+                <div><span className="text-muted-foreground">Deadline:</span> <strong>{viewItem.deadline || "-"}</strong></div>
+                <div className="col-span-2"><span className="text-muted-foreground">Location:</span> <strong>{viewItem.location || "-"}</strong></div>
+              </div>
+              {viewItem.notes && (
+                <div><span className="text-muted-foreground">Notes:</span><p className="mt-1 bg-muted p-3 rounded-lg text-foreground">{viewItem.notes}</p></div>
+              )}
+              <div className="flex gap-2 pt-2">
+                <Button size="sm" variant="outline" onClick={() => handleStatus(viewItem.id, "reviewed")}>Mark Reviewed</Button>
+                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleStatus(viewItem.id, "accepted")}>Accept</Button>
+                <Button size="sm" variant="destructive" onClick={() => handleStatus(viewItem.id, "rejected")}>Reject</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {isLoading ? <Skeleton className="h-64" /> : rfqs?.length === 0 ? (
+        <div className="bg-card rounded-xl border border-border p-12 text-center text-muted-foreground">
+          <Inbox className="mx-auto mb-3" size={40} />
+          <p>Belum ada permintaan RFQ</p>
+        </div>
+      ) : (
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted">
+              <tr>
+                <th className="text-left p-4 font-semibold">Date</th>
+                <th className="text-left p-4 font-semibold">Company</th>
+                <th className="text-left p-4 font-semibold">Contact</th>
+                <th className="text-left p-4 font-semibold">Category</th>
+                <th className="text-left p-4 font-semibold">Status</th>
+                <th className="text-right p-4 font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rfqs?.map((r: any) => (
+                <tr key={r.id} className="border-t border-border">
+                  <td className="p-4 text-muted-foreground">{new Date(r.created_at).toLocaleDateString("id-ID")}</td>
+                  <td className="p-4 font-medium text-foreground">{r.company}</td>
+                  <td className="p-4 text-muted-foreground">{r.contact_person}</td>
+                  <td className="p-4 text-muted-foreground">{r.category || "-"}</td>
+                  <td className="p-4">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${statusColors[r.status] || "bg-muted text-muted-foreground"}`}>{r.status}</span>
+                  </td>
+                  <td className="p-4 text-right flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => setViewItem(r)}><Eye size={16} className="text-muted-foreground" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(r.id)}><Trash2 size={16} className="text-destructive" /></Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AdminContent() {
   const [tab, setTab] = useState<AdminTab>("overview");
   const { user } = useAuth();
@@ -514,7 +622,7 @@ function AdminContent() {
       </header>
       <main className="flex-1 p-6 bg-background overflow-auto">
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(["overview", "products", "suppliers", "programs", "partners", "reports"] as AdminTab[]).map((t) => (
+          {(["overview", "products", "suppliers", "programs", "partners", "rfq", "reports"] as AdminTab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${tab === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
               {t}
@@ -553,6 +661,7 @@ function AdminContent() {
         {tab === "suppliers" && <AdminSuppliers />}
         {tab === "programs" && <AdminPrograms />}
         {tab === "partners" && <AdminPartners />}
+        {tab === "rfq" && <AdminRFQ />}
         {tab === "reports" && <AdminReports />}
       </main>
     </div>

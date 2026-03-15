@@ -239,6 +239,54 @@ export type Database = {
         }
         Relationships: []
       }
+      rfq_requests: {
+        Row: {
+          category: string | null
+          company: string
+          contact_person: string
+          created_at: string
+          deadline: string | null
+          email: string
+          id: string
+          location: string | null
+          notes: string | null
+          phone: string | null
+          quantity: string | null
+          status: string
+          target_price: string | null
+        }
+        Insert: {
+          category?: string | null
+          company: string
+          contact_person: string
+          created_at?: string
+          deadline?: string | null
+          email: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          phone?: string | null
+          quantity?: string | null
+          status?: string
+          target_price?: string | null
+        }
+        Update: {
+          category?: string | null
+          company?: string
+          contact_person?: string
+          created_at?: string
+          deadline?: string | null
+          email?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          phone?: string | null
+          quantity?: string | null
+          status?: string
+          target_price?: string | null
+        }
+        Relationships: []
+      }
       suppliers: {
         Row: {
           contact: string | null
