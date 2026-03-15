@@ -830,17 +830,18 @@ function AdminDashboard() {
   const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
-  // Wait for both auth and roles to fully load before making any decisions
   const isLoading = loading || roleLoading;
 
   useEffect(() => {
     if (isLoading) return;
     if (!user) {
       navigate("/login", { replace: true });
-    } else if (!isAdmin) {
+      return;
+    }
+    if (!isAdmin) {
       navigate("/", { replace: true });
     }
-  }, [user, isLoading, isAdmin, navigate]);
+  }, [isLoading, user, isAdmin, navigate]);
 
   if (isLoading) {
     return (
