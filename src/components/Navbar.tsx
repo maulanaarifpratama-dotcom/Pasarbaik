@@ -20,7 +20,7 @@ function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const isHome = location.pathname === "/" || location.pathname === "/home";
   const { user, signOut } = useAuth();
-  const { isAdmin, isEditor, isPartner } = useUserRole();
+  const { isAdmin, isPartner } = useUserRole();
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-colors ${isHome ? "bg-primary/80 backdrop-blur-md" : "bg-primary shadow-md"}`}>

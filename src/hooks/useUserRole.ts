@@ -54,7 +54,7 @@ export function useUserRole() {
   const dashboardRoute = isAdmin
     ? "/admin"
     : isEditor
-    ? "/admin"
+    ? "/dashboard"
     : isPartner
     ? "/partner"
     : "/";

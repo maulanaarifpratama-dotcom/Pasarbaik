@@ -827,7 +827,7 @@ function AdminContent() {
 
 function AdminDashboard() {
   const { user, loading } = useAuth();
-  const { isAdmin, isEditor, loading: roleLoading } = useUserRole();
+  const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
   // Wait for both auth and roles to fully load before making any decisions
@@ -837,10 +837,10 @@ function AdminDashboard() {
     if (isLoading) return;
     if (!user) {
       navigate("/login", { replace: true });
-    } else if (!isAdmin && !isEditor) {
+    } else if (!isAdmin) {
       navigate("/", { replace: true });
     }
-  }, [user, isLoading, isAdmin, isEditor, navigate]);
+  }, [user, isLoading, isAdmin, navigate]);
 
   if (isLoading) {
     return (
@@ -853,7 +853,7 @@ function AdminDashboard() {
     );
   }
 
-  if (!user || (!isAdmin && !isEditor)) return null;
+  if (!user || !isAdmin) return null;
 
   return (
     <SidebarProvider>
