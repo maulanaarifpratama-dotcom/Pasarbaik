@@ -1,12 +1,25 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, ArrowLeft, Building2, Package, Users } from "lucide-react";
+import { MapPin, ArrowLeft, Building2, Package, Users, Search, ArrowRight } from "lucide-react";
 import { usePrograms, useProgram, useProducts, useSuppliers } from "@/hooks/useSupabaseQuery";
 
 export function ProgramsList() {
   const { data: programs, isLoading } = usePrograms();
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("All");
+
+  const categories = ["All", ...new Set(programs?.map((p) => p.category).filter(Boolean) || [])];
+
+  const filtered = programs?.filter((p) => {
+    const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) ||
+      p.description?.toLowerCase().includes(search.toLowerCase());
+    const matchCat = category === "All" || p.category === category;
+    return matchSearch && matchCat;
+  });
 
   return (
     <main className="pt-16">
@@ -18,40 +31,65 @@ export function ProgramsList() {
       </section>
 
       <section className="container mx-auto px-4 py-8">
+        <div className="flex flex-col md:flex-row gap-4 mb-8">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+            <Input placeholder="Search programs..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {categories.map((c) => (
+              <button key={c} onClick={() => setCategory(c as string)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${category === c ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"}`}>
+                {c as string}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-card rounded-xl border border-border p-6">
-                <Skeleton className="h-6 w-3/4 mb-2" />
-                <Skeleton className="h-4 w-1/2 mb-4" />
-                <Skeleton className="h-16 w-full" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-card rounded-xl border border-border overflow-hidden">
+                <Skeleton className="aspect-video" />
+                <div className="p-6"><Skeleton className="h-6 w-3/4 mb-2" /><Skeleton className="h-4 w-1/2" /></div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {programs?.map((p) => (
-              <Link key={p.id} to={`/programs/${p.slug}`} className="bg-card rounded-xl border border-border p-6 hover:shadow-lg transition-all hover:-translate-y-1 group">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <Building2 className="text-primary" size={22} />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors truncate">{p.title}</h3>
-                    <div className="flex gap-2 items-center flex-wrap">
-                      <Badge variant="outline" className="text-xs">{p.category}</Badge>
-                      <span className="text-xs text-muted-foreground flex items-center gap-1"><MapPin size={12} /> {p.location}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered?.map((p) => (
+              <Link key={p.id} to={`/programs/${p.slug}`} className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1 group">
+                <div className="aspect-video bg-secondary overflow-hidden">
+                  {p.images?.[0] ? (
+                    <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+                      <Building2 className="text-primary/40" size={48} />
                     </div>
-                  </div>
+                  )}
                 </div>
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{p.description}</p>
-                <div className="flex gap-1 flex-wrap">
-                  {p.impact_tags?.map((tag: string) => (
-                    <span key={tag} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">{tag}</span>
-                  ))}
+                <div className="p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="outline" className="text-xs">{p.category}</Badge>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1"><MapPin size={10} /> {p.location}</span>
+                  </div>
+                  <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1 mb-2">{p.title}</h3>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{p.description}</p>
+                  <div className="flex gap-1 flex-wrap">
+                    {p.impact_tags?.slice(0, 3).map((tag: string) => (
+                      <span key={tag} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">{tag}</span>
+                    ))}
+                  </div>
                 </div>
               </Link>
             ))}
+          </div>
+        )}
+
+        {!isLoading && filtered?.length === 0 && (
+          <div className="text-center py-16 text-muted-foreground">
+            <Building2 className="mx-auto mb-3" size={48} />
+            <p>No programs found.</p>
           </div>
         )}
       </section>
@@ -93,6 +131,14 @@ export function ProgramDetail() {
 
   return (
     <main className="pt-16">
+      {/* Hero banner with program image */}
+      {program.images?.[0] && (
+        <div className="relative h-64 md:h-80 overflow-hidden">
+          <img src={program.images[0]} alt={program.title} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent" />
+        </div>
+      )}
+
       <div className="container mx-auto px-4 py-8">
         <Link to="/programs" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8">
           <ArrowLeft size={16} /> Back to Programs
@@ -162,6 +208,13 @@ export function ProgramDetail() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* CTA */}
+        <div className="mt-12 bg-secondary rounded-xl p-8 text-center">
+          <h3 className="font-display text-xl font-semibold text-foreground mb-2">Interested in products from this program?</h3>
+          <p className="text-muted-foreground mb-4 text-sm">Submit a Request for Quotation and we'll match you with the right suppliers.</p>
+          <Link to="/rfq"><Button size="lg">Request Quotation <ArrowRight className="ml-1" size={18} /></Button></Link>
         </div>
       </div>
     </main>
