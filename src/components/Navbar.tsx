@@ -9,13 +9,13 @@ const navItems = [
   { label: "Suppliers", path: "/suppliers" },
   { label: "Programs", path: "/programs" },
   { label: "Impact", path: "/impact" },
-  { label: "For CSR", path: "/csr" },
+  { label: "About", path: "/about" },
 ];
 
 function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isHome = location.pathname === "/";
+  const isHome = location.pathname === "/" || location.pathname === "/home";
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-colors ${isHome ? "bg-primary/80 backdrop-blur-md" : "bg-primary shadow-md"}`}>
@@ -24,56 +24,36 @@ function Navbar() {
           PasarBaik
         </Link>
 
-        {/* Desktop nav */}
         <div className="hidden lg:flex items-center gap-1">
           {navItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
               className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                location.pathname === item.path
-                  ? "text-accent"
-                  : "text-primary-foreground/80 hover:text-primary-foreground"
+                location.pathname === item.path ? "text-accent" : "text-primary-foreground/80 hover:text-primary-foreground"
               }`}
             >
               {item.label}
             </Link>
           ))}
           <Link to="/login">
-            <Button variant="hero-outline" size="sm" className="ml-2">
-              Sign In
-            </Button>
+            <Button variant="hero-outline" size="sm" className="ml-2">Sign In</Button>
           </Link>
           <Link to="/rfq">
-            <Button variant="hero" size="sm" className="ml-1">
-              Request Quote
-            </Button>
+            <Button variant="hero" size="sm" className="ml-1">Request Quote</Button>
           </Link>
         </div>
 
-        {/* Mobile toggle */}
-        <button
-          className="lg:hidden text-primary-foreground"
-          onClick={() => setMobileOpen(!mobileOpen)}
-        >
+        <button className="lg:hidden text-primary-foreground" onClick={() => setMobileOpen(!mobileOpen)}>
           {mobileOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
-      {/* Mobile menu */}
       {mobileOpen && (
         <div className="lg:hidden bg-primary border-t border-primary-foreground/10 pb-4">
           {navItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              onClick={() => setMobileOpen(false)}
-              className={`block px-6 py-3 text-sm font-medium ${
-                location.pathname === item.path
-                  ? "text-accent"
-                  : "text-primary-foreground/80"
-              }`}
-            >
+            <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)}
+              className={`block px-6 py-3 text-sm font-medium ${location.pathname === item.path ? "text-accent" : "text-primary-foreground/80"}`}>
               {item.label}
             </Link>
           ))}

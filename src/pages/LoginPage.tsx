@@ -1,16 +1,43 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Lock } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { signIn, signUp } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.info("Login functionality requires backend integration with Lovable Cloud.");
+    setLoading(true);
+
+    if (isLogin) {
+      const { error } = await signIn(email, password);
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Signed in successfully!");
+        navigate("/dashboard");
+      }
+    } else {
+      const { error } = await signUp(email, password, name);
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Account created! Check your email to confirm.");
+      }
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -31,44 +58,27 @@ function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" required placeholder="Your name" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="org">Organization</Label>
-                  <Input id="org" placeholder="Company or organization name" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <select id="role" className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground">
-                    <option value="buyer">Corporate Buyer</option>
-                    <option value="supplier">Supplier / UMKM</option>
-                    <option value="csr">CSR / NGO Partner</option>
-                  </select>
-                </div>
-              </>
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+              </div>
             )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" required placeholder="email@example.com" />
+              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required placeholder="••••••••" />
+              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
             </div>
 
-            <Button type="submit" className="w-full" size="lg">
-              {isLogin ? "Sign In" : "Create Account"}
+            <Button type="submit" className="w-full" size="lg" disabled={loading}>
+              {loading ? "Loading..." : isLogin ? "Sign In" : "Create Account"}
             </Button>
           </form>
 
           <div className="text-center mt-4">
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-primary hover:underline"
-            >
+            <button onClick={() => setIsLogin(!isLogin)} className="text-sm text-primary hover:underline">
               {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
             </button>
           </div>
