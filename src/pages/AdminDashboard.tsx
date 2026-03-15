@@ -41,8 +41,11 @@ function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { signOut } = useAuth();
+  const { isAdmin } = useUserRole();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const visibleItems = sidebarItems.filter((item) => !(item as any).adminOnly || isAdmin);
 
   return (
     <Sidebar collapsible="icon">
