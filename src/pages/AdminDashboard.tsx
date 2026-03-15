@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { ImageUpload } from "@/components/ImageUpload";
 import { RichTextEditor } from "@/components/RichTextEditor";
+import { AdminProducts } from "@/components/admin/ProductEditor";
 
 const sidebarItems = [
   { title: "Dashboard", url: "/dashboard", icon: BarChart3 },
