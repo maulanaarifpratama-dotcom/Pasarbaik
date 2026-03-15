@@ -210,6 +210,9 @@ function AdminSuppliers() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState("");
+  const [editItem, setEditItem] = useState<any>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editLogoUrl, setEditLogoUrl] = useState("");
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("suppliers").delete().eq("id", id);
@@ -232,6 +235,27 @@ function AdminSuppliers() {
     else { toast.success("Added"); qc.invalidateQueries({ queryKey: ["suppliers"] }); setOpen(false); setLogoUrl(""); }
   };
 
+  const openEdit = (s: any) => {
+    setEditItem(s);
+    setEditLogoUrl(s.logo || "");
+    setEditOpen(true);
+  };
+
+  const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const { error } = await supabase.from("suppliers").update({
+      name: fd.get("name") as string,
+      slug: (fd.get("name") as string).toLowerCase().replace(/\s+/g, "-"),
+      type: fd.get("type") as string,
+      location: fd.get("location") as string,
+      description: fd.get("description") as string,
+      logo: editLogoUrl || null,
+    }).eq("id", editItem.id);
+    if (error) toast.error(error.message);
+    else { toast.success("Updated"); qc.invalidateQueries({ queryKey: ["suppliers"] }); setEditOpen(false); setEditItem(null); }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -251,6 +275,24 @@ function AdminSuppliers() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditItem(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Supplier</DialogTitle></DialogHeader>
+          {editItem && (
+            <form onSubmit={handleEdit} className="space-y-3">
+              <div><Label>Logo / Foto</Label><ImageUpload value={editLogoUrl} onChange={setEditLogoUrl} folder="suppliers" /></div>
+              <div><Label>Name</Label><Input name="name" defaultValue={editItem.name} required /></div>
+              <div><Label>Type</Label><Input name="type" defaultValue={editItem.type || ""} placeholder="UMKM / Cooperative" /></div>
+              <div><Label>Location</Label><Input name="location" defaultValue={editItem.location || ""} /></div>
+              <div><Label>Description</Label><Input name="description" defaultValue={editItem.description || ""} /></div>
+              <Button type="submit" className="w-full">Update</Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {isLoading ? <Skeleton className="h-64" /> : (
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <table className="w-full text-sm">
@@ -276,7 +318,8 @@ function AdminSuppliers() {
                   <td className="p-4 font-medium text-foreground">{s.name}</td>
                   <td className="p-4 text-muted-foreground">{s.type}</td>
                   <td className="p-4 text-muted-foreground">{s.location}</td>
-                  <td className="p-4 text-right">
+                  <td className="p-4 text-right flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil size={16} className="text-muted-foreground" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => handleDelete(s.id)}><Trash2 size={16} className="text-destructive" /></Button>
                   </td>
                 </tr>
