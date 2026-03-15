@@ -23,6 +23,7 @@ import { ImageUpload } from "@/components/ImageUpload";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { AdminProducts } from "@/components/admin/ProductEditor";
 import { AdminSuppliers } from "@/components/admin/SupplierEditor";
+import { AdminUsers } from "@/components/admin/UserRolesManager";
 
 const sidebarItems = [
   { title: "Dashboard", url: "/dashboard", icon: BarChart3 },
