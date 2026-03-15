@@ -76,6 +76,7 @@ function AdminProducts() {
   const { data: products, isLoading } = useProducts();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("products").delete().eq("id", id);
@@ -93,20 +94,22 @@ function AdminProducts() {
       price: fd.get("price") as string,
       moq: fd.get("moq") as string,
       description: fd.get("description") as string,
+      image: imageUrl || null,
     });
     if (error) toast.error(error.message);
-    else { toast.success("Added"); qc.invalidateQueries({ queryKey: ["products"] }); setOpen(false); }
+    else { toast.success("Added"); qc.invalidateQueries({ queryKey: ["products"] }); setOpen(false); setImageUrl(""); }
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-display text-2xl font-bold text-foreground">Manage Products</h2>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setImageUrl(""); }}>
           <DialogTrigger asChild><Button size="sm"><Plus size={16} className="mr-1" /> Add Product</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Add Product</DialogTitle></DialogHeader>
             <form onSubmit={handleAdd} className="space-y-3">
+              <div><Label>Gambar Produk</Label><ImageUpload value={imageUrl} onChange={setImageUrl} folder="products" /></div>
               <div><Label>Name</Label><Input name="name" required /></div>
               <div><Label>Category</Label><Input name="category" /></div>
               <div><Label>Price</Label><Input name="price" /></div>
@@ -122,6 +125,7 @@ function AdminProducts() {
           <table className="w-full text-sm">
             <thead className="bg-muted">
               <tr>
+                <th className="text-left p-4 font-semibold w-16">Img</th>
                 <th className="text-left p-4 font-semibold">Name</th>
                 <th className="text-left p-4 font-semibold">Category</th>
                 <th className="text-left p-4 font-semibold">Price</th>
@@ -132,6 +136,13 @@ function AdminProducts() {
             <tbody>
               {products?.map((p) => (
                 <tr key={p.id} className="border-t border-border">
+                  <td className="p-4">
+                    {p.image ? (
+                      <img src={p.image} alt={p.name} className="w-10 h-10 rounded object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded bg-muted flex items-center justify-center"><ImageIcon size={16} className="text-muted-foreground" /></div>
+                    )}
+                  </td>
                   <td className="p-4 font-medium text-foreground">{p.name}</td>
                   <td className="p-4 text-muted-foreground">{p.category}</td>
                   <td className="p-4 text-muted-foreground">{p.price}</td>
