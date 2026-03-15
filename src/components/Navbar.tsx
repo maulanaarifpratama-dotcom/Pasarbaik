@@ -83,7 +83,7 @@ function Navbar() {
           <div className="px-6 pt-2 space-y-2">
             {user ? (
               <>
-                {(isAdmin || isEditor) && (
+                {isAdmin && (
                   <Button variant="hero-outline" size="sm" className="w-full" onClick={() => { navigate("/admin"); setMobileOpen(false); }}>
                     Admin Panel
                   </Button>
