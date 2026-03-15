@@ -31,21 +31,21 @@ export function ProgramsList() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {programs?.map((p) => (
-              <Link key={p.id} to={`/programs/${p.slug}`} className="bg-card rounded-xl border border-border p-6 hover:shadow-lg transition-shadow group">
+              <Link key={p.id} to={`/programs/${p.slug}`} className="bg-card rounded-xl border border-border p-6 hover:shadow-lg transition-all hover:-translate-y-1 group">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Building2 className="text-primary" size={20} />
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <Building2 className="text-primary" size={22} />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{p.title}</h3>
-                    <div className="flex gap-2 items-center">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors truncate">{p.title}</h3>
+                    <div className="flex gap-2 items-center flex-wrap">
                       <Badge variant="outline" className="text-xs">{p.category}</Badge>
                       <span className="text-xs text-muted-foreground flex items-center gap-1"><MapPin size={12} /> {p.location}</span>
                     </div>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground line-clamp-2">{p.description}</p>
-                <div className="flex gap-1 mt-3 flex-wrap">
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{p.description}</p>
+                <div className="flex gap-1 flex-wrap">
                   {p.impact_tags?.map((tag: string) => (
                     <span key={tag} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">{tag}</span>
                   ))}
@@ -102,10 +102,10 @@ export function ProgramDetail() {
           <Badge className="mb-3">{program.category}</Badge>
           <h1 className="font-display text-3xl font-bold text-foreground">{program.title}</h1>
           <p className="flex items-center gap-1 text-muted-foreground mt-2"><MapPin size={16} /> {program.location}</p>
-          <p className="text-muted-foreground mt-4">{program.description}</p>
+          <p className="text-muted-foreground mt-4 leading-relaxed">{program.description}</p>
           <div className="flex gap-2 mt-4 flex-wrap">
             {program.impact_tags?.map((tag: string) => (
-              <Badge key={tag} variant="secondary">{tag}</Badge>
+              <Badge key={tag} className="bg-primary/10 text-primary border-primary/20">{tag}</Badge>
             ))}
           </div>
         </div>
@@ -117,9 +117,18 @@ export function ProgramDetail() {
             </h2>
             <div className="space-y-3">
               {programSuppliers?.map((s) => (
-                <Link key={s.id} to={`/suppliers/${s.slug}`} className="block bg-muted rounded-lg p-4 hover:bg-muted/80 transition-colors">
-                  <p className="font-medium text-foreground">{s.name}</p>
-                  <p className="text-xs text-muted-foreground">{s.location}</p>
+                <Link key={s.id} to={`/suppliers/${s.slug}`} className="flex items-center gap-3 bg-muted rounded-lg p-4 hover:bg-muted/80 transition-colors">
+                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-primary/10 flex items-center justify-center shrink-0">
+                    {s.logo ? (
+                      <img src={s.logo} alt={s.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <Users className="text-primary" size={16} />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">{s.name}</p>
+                    <p className="text-xs text-muted-foreground">{s.location}</p>
+                  </div>
                 </Link>
               ))}
               {(!programSuppliers || programSuppliers.length === 0) && (
@@ -134,9 +143,18 @@ export function ProgramDetail() {
             </h2>
             <div className="space-y-3">
               {programProducts?.map((p) => (
-                <Link key={p.id} to={`/products/${p.slug}`} className="block bg-muted rounded-lg p-4 hover:bg-muted/80 transition-colors">
-                  <p className="font-medium text-foreground">{p.name}</p>
-                  <p className="text-xs text-muted-foreground">{p.category}</p>
+                <Link key={p.id} to={`/products/${p.slug}`} className="flex items-center gap-3 bg-muted rounded-lg p-4 hover:bg-muted/80 transition-colors">
+                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-secondary flex items-center justify-center shrink-0">
+                    {p.image ? (
+                      <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <Package className="text-muted-foreground" size={16} />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">{p.category}</p>
+                  </div>
                 </Link>
               ))}
               {(!programProducts || programProducts.length === 0) && (

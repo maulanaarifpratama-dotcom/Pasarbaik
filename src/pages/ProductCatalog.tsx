@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Package } from "lucide-react";
+import { Search, Package, MapPin } from "lucide-react";
 import { useProducts } from "@/hooks/useSupabaseQuery";
 
 function ProductCatalog() {
@@ -57,24 +57,28 @@ function ProductCatalog() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {filtered?.map((p) => (
-              <Link key={p.id} to={`/products/${p.slug}`} className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="aspect-square bg-secondary flex items-center justify-center">
+              <Link key={p.id} to={`/products/${p.slug}`} className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1">
+                <div className="aspect-square bg-secondary overflow-hidden">
                   {p.image ? (
-                    <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                    <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                   ) : (
-                    <Package className="text-muted-foreground" size={48} />
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package className="text-muted-foreground" size={48} />
+                    </div>
                   )}
                 </div>
                 <div className="p-4">
-                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{p.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-1">{(p.suppliers as any)?.name}</p>
+                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">{p.name}</h3>
+                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                    <MapPin size={10} /> {(p.suppliers as any)?.name || "Unknown Supplier"}
+                  </p>
                   <p className="text-xs text-muted-foreground">{p.category}</p>
                   <div className="flex gap-1 mt-2 flex-wrap">
                     {p.impact_tags?.slice(0, 2).map((tag: string) => (
                       <Badge key={tag} variant="secondary" className="text-[10px]">{tag}</Badge>
                     ))}
                   </div>
-                  {p.price && <p className="text-sm font-medium text-foreground mt-2">{p.price}</p>}
+                  {p.price && <p className="text-sm font-semibold text-foreground mt-2">{p.price}</p>}
                 </div>
               </Link>
             ))}
