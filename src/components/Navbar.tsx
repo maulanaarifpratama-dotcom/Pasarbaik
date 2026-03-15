@@ -82,14 +82,16 @@ function Navbar() {
           <div className="px-6 pt-2 space-y-2">
             {user ? (
               <>
-                {isAdmin && (
+                {(isAdmin || isEditor) && (
                   <Link to="/admin" onClick={() => setMobileOpen(false)}>
                     <Button variant="hero-outline" size="sm" className="w-full">Admin Panel</Button>
                   </Link>
                 )}
-                <Link to="/dashboard" onClick={() => setMobileOpen(false)}>
-                  <Button variant="hero-outline" size="sm" className="w-full">Dashboard</Button>
-                </Link>
+                {isPartner && (
+                  <Link to="/dashboard" onClick={() => setMobileOpen(false)}>
+                    <Button variant="hero-outline" size="sm" className="w-full">Dashboard</Button>
+                  </Link>
+                )}
                 <Button variant="hero" size="sm" className="w-full" onClick={() => { signOut(); setMobileOpen(false); }}>Sign Out</Button>
               </>
             ) : (
