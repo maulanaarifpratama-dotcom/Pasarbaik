@@ -328,7 +328,7 @@ function ProductForm({ product, onSave, onCancel, onDelete }: {
 }
 
 export function AdminProducts() {
-  const { data: products, isLoading } = useProducts();
+  const { data: products, isLoading } = useProducts(true);
   const qc = useQueryClient();
   const [mode, setMode] = useState<"list" | "add" | "edit">("list");
   const [editItem, setEditItem] = useState<any>(null);

@@ -87,9 +87,9 @@ function Navbar() {
                     <Button variant="hero-outline" size="sm" className="w-full">Admin Panel</Button>
                   </Link>
                 )}
-                {isPartner && (
-                  <Link to="/dashboard" onClick={() => setMobileOpen(false)}>
-                    <Button variant="hero-outline" size="sm" className="w-full">Dashboard</Button>
+                {isPartner && !isAdmin && !isEditor && (
+                  <Link to="/partner" onClick={() => setMobileOpen(false)}>
+                    <Button variant="hero-outline" size="sm" className="w-full">Partner Panel</Button>
                   </Link>
                 )}
                 <Button variant="hero" size="sm" className="w-full" onClick={() => { signOut(); setMobileOpen(false); }}>Sign Out</Button>
