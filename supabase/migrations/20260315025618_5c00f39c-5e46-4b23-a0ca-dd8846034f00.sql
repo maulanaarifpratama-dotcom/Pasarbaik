@@ -1,0 +1,1 @@
+UPDATE products SET image = 'https://images.unsplash.com/photo-1513519245088-0e12902e35a6?w=600&h=600&fit=crop' WHERE slug = 'handwoven-rattan-basket';
