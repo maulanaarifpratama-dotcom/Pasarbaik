@@ -314,6 +314,18 @@ function AdminSuppliers() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirm */}
+      <Dialog open={!!deleteId} onOpenChange={(v) => { if (!v) setDeleteId(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Confirm Delete</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Are you sure you want to delete this supplier? This action cannot be undone.</p>
+          <div className="flex gap-2 justify-end mt-4">
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {isLoading ? <Skeleton className="h-64" /> : (
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <table className="w-full text-sm">
