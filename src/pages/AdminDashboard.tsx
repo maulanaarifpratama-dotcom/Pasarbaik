@@ -20,6 +20,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { ImageUpload } from "@/components/ImageUpload";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 const sidebarItems = [
   { title: "Overview", url: "/admin", icon: BarChart3 },
