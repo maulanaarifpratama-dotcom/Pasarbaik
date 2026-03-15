@@ -1,15 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export function useProducts() {
+export function useProducts(includeAll = false) {
   return useQuery({
-    queryKey: ["products"],
+    queryKey: ["products", includeAll ? "all" : "active"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("products")
         .select("*, suppliers(*), programs(*)")
-        .eq("status", "active")
         .order("created_at", { ascending: false });
+      if (!includeAll) {
+        query = query.eq("status", "active");
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
