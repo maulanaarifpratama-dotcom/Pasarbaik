@@ -13,7 +13,6 @@ import {
   SidebarProvider, SidebarTrigger, Sidebar, SidebarContent, SidebarGroup,
   SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar,
 } from "@/components/ui/sidebar";
-import { NavLink } from "@/components/NavLink";
 import { BarChart3, Package, Users, Building2, FileText, LogOut, Handshake, Plus, Trash2, ImageIcon, Pencil, Inbox, Eye, FileEdit } from "lucide-react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
@@ -23,7 +22,7 @@ import { ImageUpload } from "@/components/ImageUpload";
 import { RichTextEditor } from "@/components/RichTextEditor";
 
 const sidebarItems = [
-  { title: "Overview", url: "/admin", icon: BarChart3 },
+  { title: "Dashboard", url: "/dashboard", icon: BarChart3 },
   { title: "Products", url: "/admin/products", icon: Package },
   { title: "Suppliers", url: "/admin/suppliers", icon: Users },
   { title: "Programs", url: "/admin/programs", icon: Building2 },
@@ -37,6 +36,8 @@ function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { signOut } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <Sidebar collapsible="icon">
@@ -47,20 +48,25 @@ function AdminSidebar() {
             <SidebarMenu>
               {sidebarItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
+                  <SidebarMenuButton
+                    type="button"
+                    onClick={() => navigate(item.url)}
+                    isActive={location.pathname === item.url}
+                    className="hover:bg-muted/50"
+                  >
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {!collapsed && <span>{item.title}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <button onClick={signOut} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
-                    <LogOut className="h-4 w-4" />
-                    {!collapsed && <span>Sign Out</span>}
-                  </button>
+                <SidebarMenuButton
+                  type="button"
+                  onClick={signOut}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <LogOut className="h-4 w-4" />
+                  {!collapsed && <span>Sign Out</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
