@@ -27,6 +27,7 @@ const sidebarItems = [
   { title: "Suppliers", url: "/admin/suppliers", icon: Users },
   { title: "Programs", url: "/admin/programs", icon: Building2 },
   { title: "Partners", url: "/admin/partners", icon: Handshake },
+  { title: "Pages", url: "/admin/pages", icon: FileEdit },
   { title: "RFQ", url: "/admin/rfq", icon: Inbox },
   { title: "Reports", url: "/admin/reports", icon: FileText },
 ];
