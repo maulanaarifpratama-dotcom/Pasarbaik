@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
@@ -16,6 +16,7 @@ const navItems = [
 
 function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const isHome = location.pathname === "/" || location.pathname === "/home";
   const { user, signOut } = useAuth();
@@ -43,25 +44,25 @@ function Navbar() {
           {user ? (
             <>
               {(isAdmin || isEditor) && (
-                <Link to="/admin">
-                  <Button variant="hero-outline" size="sm" className="ml-2">Admin Panel</Button>
-                </Link>
+                <Button variant="hero-outline" size="sm" className="ml-2" onClick={() => navigate("/admin")}>
+                  Admin Panel
+                </Button>
               )}
               {isPartner && !isAdmin && !isEditor && (
-                <Link to="/partner">
-                  <Button variant="hero-outline" size="sm" className="ml-1">Partner Panel</Button>
-                </Link>
+                <Button variant="hero-outline" size="sm" className="ml-1" onClick={() => navigate("/partner")}>
+                  Partner Panel
+                </Button>
               )}
               <Button variant="hero" size="sm" className="ml-1" onClick={signOut}>Sign Out</Button>
             </>
           ) : (
             <>
-              <Link to="/login">
-                <Button variant="hero-outline" size="sm" className="ml-2">Sign In</Button>
-              </Link>
-              <Link to="/rfq">
-                <Button variant="hero" size="sm" className="ml-1">Request Quote</Button>
-              </Link>
+              <Button variant="hero-outline" size="sm" className="ml-2" onClick={() => navigate("/login")}>
+                Sign In
+              </Button>
+              <Button variant="hero" size="sm" className="ml-1" onClick={() => navigate("/rfq")}>
+                Request Quote
+              </Button>
             </>
           )}
         </div>
@@ -83,25 +84,25 @@ function Navbar() {
             {user ? (
               <>
                 {(isAdmin || isEditor) && (
-                  <Link to="/admin" onClick={() => setMobileOpen(false)}>
-                    <Button variant="hero-outline" size="sm" className="w-full">Admin Panel</Button>
-                  </Link>
+                  <Button variant="hero-outline" size="sm" className="w-full" onClick={() => { navigate("/admin"); setMobileOpen(false); }}>
+                    Admin Panel
+                  </Button>
                 )}
                 {isPartner && !isAdmin && !isEditor && (
-                  <Link to="/partner" onClick={() => setMobileOpen(false)}>
-                    <Button variant="hero-outline" size="sm" className="w-full">Partner Panel</Button>
-                  </Link>
+                  <Button variant="hero-outline" size="sm" className="w-full" onClick={() => { navigate("/partner"); setMobileOpen(false); }}>
+                    Partner Panel
+                  </Button>
                 )}
                 <Button variant="hero" size="sm" className="w-full" onClick={() => { signOut(); setMobileOpen(false); }}>Sign Out</Button>
               </>
             ) : (
               <>
-                <Link to="/login" onClick={() => setMobileOpen(false)}>
-                  <Button variant="hero-outline" size="sm" className="w-full">Sign In</Button>
-                </Link>
-                <Link to="/rfq" onClick={() => setMobileOpen(false)}>
-                  <Button variant="hero" size="sm" className="w-full">Request Quote</Button>
-                </Link>
+                <Button variant="hero-outline" size="sm" className="w-full" onClick={() => { navigate("/login"); setMobileOpen(false); }}>
+                  Sign In
+                </Button>
+                <Button variant="hero" size="sm" className="w-full" onClick={() => { navigate("/rfq"); setMobileOpen(false); }}>
+                  Request Quote
+                </Button>
               </>
             )}
           </div>

@@ -518,17 +518,21 @@ export default function PartnerDashboard() {
   const { isPartner, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!loading && !roleLoading) {
-      if (!user) navigate("/login");
-      else if (!isPartner) navigate("/");
-    }
-  }, [user, loading, roleLoading, isPartner, navigate]);
+  const isLoading = loading || roleLoading;
 
-  if (loading || roleLoading) {
+  useEffect(() => {
+    if (isLoading) return;
+    if (!user) navigate("/login", { replace: true });
+    else if (!isPartner) navigate("/", { replace: true });
+  }, [user, isLoading, isPartner, navigate]);
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Skeleton className="h-12 w-48" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-3">
+          <Skeleton className="h-8 w-48 mx-auto" />
+          <p className="text-sm text-muted-foreground">Loading partner panel...</p>
+        </div>
       </div>
     );
   }

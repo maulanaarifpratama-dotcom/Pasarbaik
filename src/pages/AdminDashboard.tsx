@@ -830,17 +830,25 @@ function AdminDashboard() {
   const { isAdmin, isEditor, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!loading && !roleLoading) {
-      if (!user) navigate("/login");
-      else if (!isAdmin && !isEditor) navigate("/");
-    }
-  }, [user, loading, roleLoading, isAdmin, isEditor, navigate]);
+  // Wait for both auth and roles to fully load before making any decisions
+  const isLoading = loading || roleLoading;
 
-  if (loading || roleLoading) {
+  useEffect(() => {
+    if (isLoading) return;
+    if (!user) {
+      navigate("/login", { replace: true });
+    } else if (!isAdmin && !isEditor) {
+      navigate("/", { replace: true });
+    }
+  }, [user, isLoading, isAdmin, isEditor, navigate]);
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Skeleton className="h-12 w-48" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-3">
+          <Skeleton className="h-8 w-48 mx-auto" />
+          <p className="text-sm text-muted-foreground">Loading admin panel...</p>
+        </div>
       </div>
     );
   }
