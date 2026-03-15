@@ -48,7 +48,7 @@ export function useUserRole() {
     : isEditor
     ? "/admin"
     : isPartner
-    ? "/dashboard"
+    ? "/partner"
     : "/";
 
   return { roles, loading, hasRole, isAdmin, isEditor, isPartner, isUser, primaryRole, dashboardRoute };
