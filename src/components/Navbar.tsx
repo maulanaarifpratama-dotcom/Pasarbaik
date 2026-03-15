@@ -1,7 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const navItems = [
   { label: "Home", path: "/" },
@@ -16,6 +18,22 @@ function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const isHome = location.pathname === "/" || location.pathname === "/home";
+  const { user, signOut } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .then(({ data }) => {
+          setIsAdmin(data?.some((r) => r.role === "admin") || false);
+        });
+    } else {
+      setIsAdmin(false);
+    }
+  }, [user]);
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-colors ${isHome ? "bg-primary/80 backdrop-blur-md" : "bg-primary shadow-md"}`}>
@@ -36,12 +54,28 @@ function Navbar() {
               {item.label}
             </Link>
           ))}
-          <Link to="/login">
-            <Button variant="hero-outline" size="sm" className="ml-2">Sign In</Button>
-          </Link>
-          <Link to="/rfq">
-            <Button variant="hero" size="sm" className="ml-1">Request Quote</Button>
-          </Link>
+          {user ? (
+            <>
+              {isAdmin && (
+                <Link to="/admin">
+                  <Button variant="hero-outline" size="sm" className="ml-2">Admin Panel</Button>
+                </Link>
+              )}
+              <Link to="/dashboard">
+                <Button variant="hero-outline" size="sm" className="ml-1">Dashboard</Button>
+              </Link>
+              <Button variant="hero" size="sm" className="ml-1" onClick={signOut}>Sign Out</Button>
+            </>
+          ) : (
+            <>
+              <Link to="/login">
+                <Button variant="hero-outline" size="sm" className="ml-2">Sign In</Button>
+              </Link>
+              <Link to="/rfq">
+                <Button variant="hero" size="sm" className="ml-1">Request Quote</Button>
+              </Link>
+            </>
+          )}
         </div>
 
         <button className="lg:hidden text-primary-foreground" onClick={() => setMobileOpen(!mobileOpen)}>
@@ -58,12 +92,28 @@ function Navbar() {
             </Link>
           ))}
           <div className="px-6 pt-2 space-y-2">
-            <Link to="/login" onClick={() => setMobileOpen(false)}>
-              <Button variant="hero-outline" size="sm" className="w-full">Sign In</Button>
-            </Link>
-            <Link to="/rfq" onClick={() => setMobileOpen(false)}>
-              <Button variant="hero" size="sm" className="w-full">Request Quote</Button>
-            </Link>
+            {user ? (
+              <>
+                {isAdmin && (
+                  <Link to="/admin" onClick={() => setMobileOpen(false)}>
+                    <Button variant="hero-outline" size="sm" className="w-full">Admin Panel</Button>
+                  </Link>
+                )}
+                <Link to="/dashboard" onClick={() => setMobileOpen(false)}>
+                  <Button variant="hero-outline" size="sm" className="w-full">Dashboard</Button>
+                </Link>
+                <Button variant="hero" size="sm" className="w-full" onClick={() => { signOut(); setMobileOpen(false); }}>Sign Out</Button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" onClick={() => setMobileOpen(false)}>
+                  <Button variant="hero-outline" size="sm" className="w-full">Sign In</Button>
+                </Link>
+                <Link to="/rfq" onClick={() => setMobileOpen(false)}>
+                  <Button variant="hero" size="sm" className="w-full">Request Quote</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
