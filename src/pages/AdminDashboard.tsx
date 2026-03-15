@@ -757,6 +757,7 @@ function AdminContent() {
     pages: "/admin/pages",
     rfq: "/admin/rfq",
     reports: "/admin/reports",
+    users: "/admin/users",
   };
 
   // Editors can access content tabs but not user management
