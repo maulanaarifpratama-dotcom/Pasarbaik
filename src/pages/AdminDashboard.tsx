@@ -83,6 +83,8 @@ type AdminTab = "overview" | "products" | "suppliers" | "programs" | "partners" 
 // --- CRUD Components ---
 
 // AdminProducts is now imported from @/components/admin/ProductEditor
+
+function AdminSuppliers() {
   const { data: suppliers, isLoading } = useSuppliers();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
