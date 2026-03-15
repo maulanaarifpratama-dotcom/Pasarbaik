@@ -16,12 +16,20 @@ export function useUserRole() {
       return;
     }
 
+    // Reset loading when user changes to prevent premature redirects
+    setLoading(true);
+
     supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
-      .then(({ data }) => {
-        setRoles((data?.map((r) => r.role) as AppRole[]) || []);
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Error fetching roles:", error);
+          setRoles([]);
+        } else {
+          setRoles((data?.map((r) => r.role) as AppRole[]) || []);
+        }
         setLoading(false);
       });
   }, [user]);

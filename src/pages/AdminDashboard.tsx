@@ -741,7 +741,7 @@ function AdminRFQ() {
 function AdminContent() {
   const { user } = useAuth();
   const { isAdmin } = useUserRole();
-  const { data: products } = useProducts();
+  const { data: products } = useProducts(true);
   const { data: suppliers } = useSuppliers();
   const { data: programs } = usePrograms();
   const { data: partners } = usePartners();
