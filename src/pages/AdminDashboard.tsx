@@ -70,7 +70,7 @@ function AdminSidebar() {
   );
 }
 
-type AdminTab = "overview" | "products" | "suppliers" | "programs" | "partners" | "rfq" | "reports";
+type AdminTab = "overview" | "products" | "suppliers" | "programs" | "partners" | "pages" | "rfq" | "reports";
 
 // --- CRUD Components ---
 
