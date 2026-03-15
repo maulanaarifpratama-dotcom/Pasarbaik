@@ -211,7 +211,7 @@ function AdminProducts() {
                   <td className="p-4"><Badge variant="secondary">{p.status}</Badge></td>
                   <td className="p-4 text-right flex items-center justify-end gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil size={16} className="text-muted-foreground" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}><Trash2 size={16} className="text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(p.id)}><Trash2 size={16} className="text-destructive" /></Button>
                   </td>
                 </tr>
               ))}
