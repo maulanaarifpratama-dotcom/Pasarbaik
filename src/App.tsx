@@ -23,7 +23,7 @@ const queryClient = new QueryClient();
 
 function AppLayout() {
   const location = useLocation();
-  const isDashboard = location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin");
+  const isDashboard = location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin") || location.pathname.startsWith("/partner");
 
   return (
     <>
