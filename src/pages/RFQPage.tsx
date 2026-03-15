@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Briefcase } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 function RFQPage() {
   const [loading, setLoading] = useState(false);
@@ -12,9 +13,45 @@ function RFQPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    toast.success("RFQ submitted successfully! We'll contact you soon.");
-    (e.target as HTMLFormElement).reset();
+    const fd = new FormData(e.currentTarget);
+
+    const company = (fd.get("company") as string).trim();
+    const contact_person = (fd.get("contact") as string).trim();
+    const email = (fd.get("email") as string).trim();
+    const phone = (fd.get("phone") as string)?.trim() || null;
+    const category = (fd.get("category") as string) || null;
+    const quantity = (fd.get("quantity") as string)?.trim() || null;
+    const target_price = (fd.get("price") as string)?.trim() || null;
+    const deadlineVal = fd.get("deadline") as string;
+    const deadline = deadlineVal || null;
+    const location = (fd.get("location") as string)?.trim() || null;
+    const notes = (fd.get("notes") as string)?.trim() || null;
+
+    if (!company || !contact_person || !email) {
+      toast.error("Mohon lengkapi data wajib");
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.from("rfq_requests" as any).insert({
+      company,
+      contact_person,
+      email,
+      phone,
+      category,
+      quantity,
+      target_price,
+      deadline,
+      location,
+      notes,
+    } as any);
+
+    if (error) {
+      toast.error("Gagal mengirim RFQ: " + error.message);
+    } else {
+      toast.success("RFQ berhasil dikirim! Kami akan menghubungi Anda segera.");
+      (e.target as HTMLFormElement).reset();
+    }
     setLoading(false);
   };
 
@@ -42,22 +79,22 @@ function RFQPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Company Name</Label>
-                <Input name="company" required placeholder="PT Example Indonesia" />
+                <Label>Company Name *</Label>
+                <Input name="company" required placeholder="PT Example Indonesia" maxLength={200} />
               </div>
               <div className="space-y-2">
-                <Label>Contact Person</Label>
-                <Input name="contact" required placeholder="Your name" />
+                <Label>Contact Person *</Label>
+                <Input name="contact" required placeholder="Your name" maxLength={100} />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Email</Label>
-                <Input name="email" type="email" required placeholder="email@company.com" />
+                <Label>Email *</Label>
+                <Input name="email" type="email" required placeholder="email@company.com" maxLength={255} />
               </div>
               <div className="space-y-2">
                 <Label>Phone</Label>
-                <Input name="phone" placeholder="+62 812 3456 7890" />
+                <Input name="phone" placeholder="+62 812 3456 7890" maxLength={30} />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -74,13 +111,13 @@ function RFQPage() {
               </div>
               <div className="space-y-2">
                 <Label>Quantity</Label>
-                <Input name="quantity" placeholder="e.g. 500 pcs" />
+                <Input name="quantity" placeholder="e.g. 500 pcs" maxLength={100} />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Target Price</Label>
-                <Input name="price" placeholder="e.g. IDR 100,000/pcs" />
+                <Input name="price" placeholder="e.g. IDR 100,000/pcs" maxLength={100} />
               </div>
               <div className="space-y-2">
                 <Label>Deadline</Label>
@@ -89,11 +126,11 @@ function RFQPage() {
             </div>
             <div className="space-y-2">
               <Label>Delivery Location</Label>
-              <Input name="location" placeholder="City, Province" />
+              <Input name="location" placeholder="City, Province" maxLength={200} />
             </div>
             <div className="space-y-2">
               <Label>Additional Notes</Label>
-              <Textarea name="notes" placeholder="Describe your requirements..." rows={4} />
+              <Textarea name="notes" placeholder="Describe your requirements..." rows={4} maxLength={2000} />
             </div>
             <Button type="submit" className="w-full" size="lg" disabled={loading}>
               {loading ? "Submitting..." : "Submit RFQ"}
