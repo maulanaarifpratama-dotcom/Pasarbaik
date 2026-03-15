@@ -51,6 +51,11 @@ function RFQPage() {
     } else {
       toast.success("RFQ berhasil dikirim! Kami akan menghubungi Anda segera.");
       (e.target as HTMLFormElement).reset();
+
+      // Send email notification to admins (fire-and-forget)
+      supabase.functions.invoke("notify-rfq", {
+        body: { rfq: { company, contact_person, email, phone, category, quantity, target_price, deadline, location, notes } },
+      }).catch((err) => console.warn("RFQ notification failed:", err));
     }
     setLoading(false);
   };
