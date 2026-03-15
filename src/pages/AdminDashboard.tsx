@@ -23,6 +23,7 @@ import { ImageUpload } from "@/components/ImageUpload";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { AdminProducts } from "@/components/admin/ProductEditor";
 import { AdminSuppliers } from "@/components/admin/SupplierEditor";
+import { AdminUsers } from "@/components/admin/UserRolesManager";
 
 const sidebarItems = [
   { title: "Dashboard", url: "/dashboard", icon: BarChart3 },
@@ -33,14 +34,18 @@ const sidebarItems = [
   { title: "Pages", url: "/admin/pages", icon: FileEdit },
   { title: "RFQ", url: "/admin/rfq", icon: Inbox },
   { title: "Reports", url: "/admin/reports", icon: FileText },
+  { title: "Users", url: "/admin/users", icon: Users, adminOnly: true },
 ];
 
 function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { signOut } = useAuth();
+  const { isAdmin } = useUserRole();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const visibleItems = sidebarItems.filter((item) => !(item as any).adminOnly || isAdmin);
 
   return (
     <Sidebar collapsible="icon">
@@ -49,7 +54,7 @@ function AdminSidebar() {
           <SidebarGroupLabel>{!collapsed && "Admin Panel"}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {sidebarItems.map((item) => (
+              {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     type="button"
@@ -80,7 +85,7 @@ function AdminSidebar() {
   );
 }
 
-type AdminTab = "overview" | "products" | "suppliers" | "programs" | "partners" | "pages" | "rfq" | "reports";
+type AdminTab = "overview" | "products" | "suppliers" | "programs" | "partners" | "pages" | "rfq" | "reports" | "users";
 
 // --- CRUD Components ---
 
@@ -744,7 +749,7 @@ function AdminContent() {
   const navigate = useNavigate();
 
   const pathSegment = location.pathname.replace("/admin", "").replace("/", "") || "overview";
-  const tab = (["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "reports"].includes(pathSegment) ? pathSegment : "overview") as AdminTab;
+  const tab = (["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "reports", "users"].includes(pathSegment) ? pathSegment : "overview") as AdminTab;
 
   const tabRouteMap: Record<AdminTab, string> = {
     overview: "/admin",
@@ -755,11 +760,12 @@ function AdminContent() {
     pages: "/admin/pages",
     rfq: "/admin/rfq",
     reports: "/admin/reports",
+    users: "/admin/users",
   };
 
   // Editors can access content tabs but not user management
   const editorTabs: AdminTab[] = ["overview", "products", "suppliers", "programs", "pages", "reports"];
-  const adminTabs: AdminTab[] = ["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "reports"];
+  const adminTabs: AdminTab[] = ["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "reports", "users"];
   const visibleTabs = isAdmin ? adminTabs : editorTabs;
 
   return (
@@ -813,6 +819,7 @@ function AdminContent() {
         {tab === "pages" && <AdminPages />}
         {tab === "rfq" && <AdminRFQ />}
         {tab === "reports" && <AdminReports />}
+        {tab === "users" && isAdmin && <AdminUsers />}
       </main>
     </div>
   );
