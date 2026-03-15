@@ -18,9 +18,9 @@ export function generateImpactPDF(data: ImpactData) {
   const contentWidth = pageWidth - margin * 2;
   let y = margin;
 
-  const primary = [30, 70, 50]; // HSL-approximated green
-  const dark = [30, 30, 30];
-  const muted = [120, 120, 120];
+  const primary: [number, number, number] = [30, 70, 50];
+  const dark: [number, number, number] = [30, 30, 30];
+  const muted: [number, number, number] = [120, 120, 120];
 
   // --- Header ---
   doc.setFillColor(primary[0], primary[1], primary[2]);
