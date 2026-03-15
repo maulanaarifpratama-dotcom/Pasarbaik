@@ -54,12 +54,28 @@ function Navbar() {
               {item.label}
             </Link>
           ))}
-          <Link to="/login">
-            <Button variant="hero-outline" size="sm" className="ml-2">Sign In</Button>
-          </Link>
-          <Link to="/rfq">
-            <Button variant="hero" size="sm" className="ml-1">Request Quote</Button>
-          </Link>
+          {user ? (
+            <>
+              {isAdmin && (
+                <Link to="/admin">
+                  <Button variant="hero-outline" size="sm" className="ml-2">Admin Panel</Button>
+                </Link>
+              )}
+              <Link to="/dashboard">
+                <Button variant="hero-outline" size="sm" className="ml-1">Dashboard</Button>
+              </Link>
+              <Button variant="hero" size="sm" className="ml-1" onClick={signOut}>Sign Out</Button>
+            </>
+          ) : (
+            <>
+              <Link to="/login">
+                <Button variant="hero-outline" size="sm" className="ml-2">Sign In</Button>
+              </Link>
+              <Link to="/rfq">
+                <Button variant="hero" size="sm" className="ml-1">Request Quote</Button>
+              </Link>
+            </>
+          )}
         </div>
 
         <button className="lg:hidden text-primary-foreground" onClick={() => setMobileOpen(!mobileOpen)}>
