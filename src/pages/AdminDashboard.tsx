@@ -83,11 +83,14 @@ function AdminProducts() {
   const [editItem, setEditItem] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editImageUrl, setEditImageUrl] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("products").delete().eq("id", id);
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from("products").delete().eq("id", deleteId);
     if (error) toast.error(error.message);
     else { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["products"] }); }
+    setDeleteId(null);
   };
 
   const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
