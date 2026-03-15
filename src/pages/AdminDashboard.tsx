@@ -754,6 +754,8 @@ function AdminPages() {
   const [editItem, setEditItem] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [addContent, setAddContent] = useState("");
+  const [editContent, setEditContent] = useState("");
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -767,20 +769,22 @@ function AdminPages() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const title = fd.get("title") as string;
-    let contentStr = fd.get("content") as string;
-    let contentJson: any = {};
-    try { contentJson = JSON.parse(contentStr); } catch { contentJson = { body: contentStr }; }
     const { error } = await supabase.from("pages").insert({
       title,
       slug: title.toLowerCase().replace(/\s+/g, "-"),
-      content_json: contentJson,
+      content_json: { html: addContent },
     });
     if (error) toast.error(error.message);
-    else { toast.success("Added"); qc.invalidateQueries({ queryKey: ["pages"] }); setOpen(false); }
+    else { toast.success("Added"); qc.invalidateQueries({ queryKey: ["pages"] }); setOpen(false); setAddContent(""); }
   };
 
   const openEdit = (p: any) => {
     setEditItem(p);
+    const cj = p.content_json;
+    if (cj?.html) setEditContent(cj.html);
+    else if (cj?.body) setEditContent(cj.body);
+    else if (typeof cj === "string") setEditContent(cj);
+    else setEditContent("");
     setEditOpen(true);
   };
 
@@ -788,35 +792,26 @@ function AdminPages() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const title = fd.get("title") as string;
-    let contentStr = fd.get("content") as string;
-    let contentJson: any = {};
-    try { contentJson = JSON.parse(contentStr); } catch { contentJson = { body: contentStr }; }
     const { error } = await supabase.from("pages").update({
       title,
       slug: title.toLowerCase().replace(/\s+/g, "-"),
-      content_json: contentJson,
+      content_json: { html: editContent },
     }).eq("id", editItem.id);
     if (error) toast.error(error.message);
     else { toast.success("Updated"); qc.invalidateQueries({ queryKey: ["pages"] }); setEditOpen(false); setEditItem(null); }
-  };
-
-  const formatContent = (item: any) => {
-    if (!item?.content_json) return "";
-    if (typeof item.content_json === "object" && item.content_json.body) return item.content_json.body;
-    return JSON.stringify(item.content_json, null, 2);
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-display text-2xl font-bold text-foreground">Manage Pages</h2>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setAddContent(""); }}>
           <DialogTrigger asChild><Button size="sm"><Plus size={16} className="mr-1" /> Add Page</Button></DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Add Page</DialogTitle></DialogHeader>
             <form onSubmit={handleAdd} className="space-y-3">
               <div><Label>Title</Label><Input name="title" required /></div>
-              <div><Label>Content (text or JSON)</Label><textarea name="content" rows={6} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder='Page content or {"body": "..."}' /></div>
+              <div><Label>Content</Label><RichTextEditor value={addContent} onChange={setAddContent} /></div>
               <Button type="submit" className="w-full">Save</Button>
             </form>
           </DialogContent>
@@ -824,12 +819,12 @@ function AdminPages() {
       </div>
 
       <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditItem(null); }}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Edit Page</DialogTitle></DialogHeader>
           {editItem && (
             <form onSubmit={handleEdit} className="space-y-3">
               <div><Label>Title</Label><Input name="title" defaultValue={editItem.title} required /></div>
-              <div><Label>Content (text or JSON)</Label><textarea name="content" rows={6} defaultValue={formatContent(editItem)} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
+              <div><Label>Content</Label><RichTextEditor value={editContent} onChange={setEditContent} /></div>
               <Button type="submit" className="w-full">Update</Button>
             </form>
           )}
