@@ -43,7 +43,7 @@ function Navbar() {
           ))}
           {user ? (
             <>
-              {(isAdmin || isEditor) && (
+              {isAdmin && (
                 <Button variant="hero-outline" size="sm" className="ml-2" onClick={() => navigate("/admin")}>
                   Admin Panel
                 </Button>
