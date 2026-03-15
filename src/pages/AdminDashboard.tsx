@@ -337,11 +337,18 @@ function AdminPrograms() {
   const { data: programs, isLoading } = usePrograms();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  const [editItem, setEditItem] = useState<any>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editImageUrl, setEditImageUrl] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("programs").delete().eq("id", id);
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from("programs").delete().eq("id", deleteId);
     if (error) toast.error(error.message);
     else { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["programs"] }); }
+    setDeleteId(null);
   };
 
   const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -353,20 +360,43 @@ function AdminPrograms() {
       category: fd.get("category") as string,
       location: fd.get("location") as string,
       description: fd.get("description") as string,
+      images: imageUrl ? [imageUrl] : null,
     });
     if (error) toast.error(error.message);
-    else { toast.success("Added"); qc.invalidateQueries({ queryKey: ["programs"] }); setOpen(false); }
+    else { toast.success("Added"); qc.invalidateQueries({ queryKey: ["programs"] }); setOpen(false); setImageUrl(""); }
+  };
+
+  const openEdit = (p: any) => {
+    setEditItem(p);
+    setEditImageUrl(p.images?.[0] || "");
+    setEditOpen(true);
+  };
+
+  const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const { error } = await supabase.from("programs").update({
+      title: fd.get("title") as string,
+      slug: (fd.get("title") as string).toLowerCase().replace(/\s+/g, "-"),
+      category: fd.get("category") as string,
+      location: fd.get("location") as string,
+      description: fd.get("description") as string,
+      images: editImageUrl ? [editImageUrl] : null,
+    }).eq("id", editItem.id);
+    if (error) toast.error(error.message);
+    else { toast.success("Updated"); qc.invalidateQueries({ queryKey: ["programs"] }); setEditOpen(false); setEditItem(null); }
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-display text-2xl font-bold text-foreground">Manage Programs</h2>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setImageUrl(""); }}>
           <DialogTrigger asChild><Button size="sm"><Plus size={16} className="mr-1" /> Add Program</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Add Program</DialogTitle></DialogHeader>
             <form onSubmit={handleAdd} className="space-y-3">
+              <div><Label>Image</Label><ImageUpload value={imageUrl} onChange={setImageUrl} folder="programs" /></div>
               <div><Label>Title</Label><Input name="title" required /></div>
               <div><Label>Category</Label><Input name="category" placeholder="CSR / NGO / Government" /></div>
               <div><Label>Location</Label><Input name="location" /></div>
@@ -376,6 +406,36 @@ function AdminPrograms() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditItem(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Program</DialogTitle></DialogHeader>
+          {editItem && (
+            <form onSubmit={handleEdit} className="space-y-3">
+              <div><Label>Image</Label><ImageUpload value={editImageUrl} onChange={setEditImageUrl} folder="programs" /></div>
+              <div><Label>Title</Label><Input name="title" defaultValue={editItem.title} required /></div>
+              <div><Label>Category</Label><Input name="category" defaultValue={editItem.category || ""} placeholder="CSR / NGO / Government" /></div>
+              <div><Label>Location</Label><Input name="location" defaultValue={editItem.location || ""} /></div>
+              <div><Label>Description</Label><Input name="description" defaultValue={editItem.description || ""} /></div>
+              <Button type="submit" className="w-full">Update</Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm */}
+      <Dialog open={!!deleteId} onOpenChange={(v) => { if (!v) setDeleteId(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Confirm Delete</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Are you sure you want to delete this program? This action cannot be undone.</p>
+          <div className="flex gap-2 justify-end mt-4">
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {isLoading ? <Skeleton className="h-64" /> : (
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <table className="w-full text-sm">
@@ -393,8 +453,9 @@ function AdminPrograms() {
                   <td className="p-4 font-medium text-foreground">{p.title}</td>
                   <td className="p-4 text-muted-foreground">{p.category}</td>
                   <td className="p-4 text-muted-foreground">{p.location}</td>
-                  <td className="p-4 text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}><Trash2 size={16} className="text-destructive" /></Button>
+                  <td className="p-4 text-right flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil size={16} className="text-muted-foreground" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(p.id)}><Trash2 size={16} className="text-destructive" /></Button>
                   </td>
                 </tr>
               ))}
@@ -410,11 +471,18 @@ function AdminPartners() {
   const { data: partners, isLoading } = usePartners();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState("");
+  const [editItem, setEditItem] = useState<any>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editLogoUrl, setEditLogoUrl] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("partners").delete().eq("id", id);
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from("partners").delete().eq("id", deleteId);
     if (error) toast.error(error.message);
     else { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["partners"] }); }
+    setDeleteId(null);
   };
 
   const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -424,20 +492,41 @@ function AdminPartners() {
       name: fd.get("name") as string,
       type: fd.get("type") as string,
       description: fd.get("description") as string,
+      logo: logoUrl || null,
     });
     if (error) toast.error(error.message);
-    else { toast.success("Added"); qc.invalidateQueries({ queryKey: ["partners"] }); setOpen(false); }
+    else { toast.success("Added"); qc.invalidateQueries({ queryKey: ["partners"] }); setOpen(false); setLogoUrl(""); }
+  };
+
+  const openEdit = (p: any) => {
+    setEditItem(p);
+    setEditLogoUrl(p.logo || "");
+    setEditOpen(true);
+  };
+
+  const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const { error } = await supabase.from("partners").update({
+      name: fd.get("name") as string,
+      type: fd.get("type") as string,
+      description: fd.get("description") as string,
+      logo: editLogoUrl || null,
+    }).eq("id", editItem.id);
+    if (error) toast.error(error.message);
+    else { toast.success("Updated"); qc.invalidateQueries({ queryKey: ["partners"] }); setEditOpen(false); setEditItem(null); }
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-display text-2xl font-bold text-foreground">Manage Partners</h2>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setLogoUrl(""); }}>
           <DialogTrigger asChild><Button size="sm"><Plus size={16} className="mr-1" /> Add Partner</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Add Partner</DialogTitle></DialogHeader>
             <form onSubmit={handleAdd} className="space-y-3">
+              <div><Label>Logo</Label><ImageUpload value={logoUrl} onChange={setLogoUrl} folder="partners" /></div>
               <div><Label>Name</Label><Input name="name" required /></div>
               <div><Label>Type</Label><Input name="type" placeholder="NGO / Corporate / Government" /></div>
               <div><Label>Description</Label><Input name="description" /></div>
@@ -446,11 +535,41 @@ function AdminPartners() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditItem(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Partner</DialogTitle></DialogHeader>
+          {editItem && (
+            <form onSubmit={handleEdit} className="space-y-3">
+              <div><Label>Logo</Label><ImageUpload value={editLogoUrl} onChange={setEditLogoUrl} folder="partners" /></div>
+              <div><Label>Name</Label><Input name="name" defaultValue={editItem.name} required /></div>
+              <div><Label>Type</Label><Input name="type" defaultValue={editItem.type || ""} placeholder="NGO / Corporate / Government" /></div>
+              <div><Label>Description</Label><Input name="description" defaultValue={editItem.description || ""} /></div>
+              <Button type="submit" className="w-full">Update</Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm */}
+      <Dialog open={!!deleteId} onOpenChange={(v) => { if (!v) setDeleteId(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Confirm Delete</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Are you sure you want to delete this partner? This action cannot be undone.</p>
+          <div className="flex gap-2 justify-end mt-4">
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {isLoading ? <Skeleton className="h-64" /> : (
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-muted">
               <tr>
+                <th className="text-left p-4 font-semibold w-16">Logo</th>
                 <th className="text-left p-4 font-semibold">Name</th>
                 <th className="text-left p-4 font-semibold">Type</th>
                 <th className="text-left p-4 font-semibold">Description</th>
@@ -460,11 +579,19 @@ function AdminPartners() {
             <tbody>
               {partners?.map((p) => (
                 <tr key={p.id} className="border-t border-border">
+                  <td className="p-4">
+                    {p.logo ? (
+                      <img src={p.logo} alt={p.name} className="w-10 h-10 rounded object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded bg-muted flex items-center justify-center"><ImageIcon size={16} className="text-muted-foreground" /></div>
+                    )}
+                  </td>
                   <td className="p-4 font-medium text-foreground">{p.name}</td>
                   <td className="p-4 text-muted-foreground">{p.type}</td>
                   <td className="p-4 text-muted-foreground text-xs max-w-xs truncate">{p.description}</td>
-                  <td className="p-4 text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}><Trash2 size={16} className="text-destructive" /></Button>
+                  <td className="p-4 text-right flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil size={16} className="text-muted-foreground" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(p.id)}><Trash2 size={16} className="text-destructive" /></Button>
                   </td>
                 </tr>
               ))}
@@ -478,20 +605,133 @@ function AdminPartners() {
 
 function AdminReports() {
   const { data: reports, isLoading } = useImpactReports();
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [editItem, setEditItem] = useState<any>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from("impact_reports").delete().eq("id", deleteId);
+    if (error) toast.error(error.message);
+    else { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["impact_reports"] }); }
+    setDeleteId(null);
+  };
+
+  const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const sdgRaw = fd.get("sdg_tags") as string;
+    const { error } = await supabase.from("impact_reports").insert({
+      title: fd.get("title") as string,
+      slug: (fd.get("title") as string).toLowerCase().replace(/\s+/g, "-"),
+      date: (fd.get("date") as string) || null,
+      beneficiaries: parseInt(fd.get("beneficiaries") as string) || 0,
+      sdg_tags: sdgRaw ? sdgRaw.split(",").map(s => s.trim()) : null,
+    });
+    if (error) toast.error(error.message);
+    else { toast.success("Added"); qc.invalidateQueries({ queryKey: ["impact_reports"] }); setOpen(false); }
+  };
+
+  const openEdit = (r: any) => {
+    setEditItem(r);
+    setEditOpen(true);
+  };
+
+  const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const sdgRaw = fd.get("sdg_tags") as string;
+    const { error } = await supabase.from("impact_reports").update({
+      title: fd.get("title") as string,
+      slug: (fd.get("title") as string).toLowerCase().replace(/\s+/g, "-"),
+      date: (fd.get("date") as string) || null,
+      beneficiaries: parseInt(fd.get("beneficiaries") as string) || 0,
+      sdg_tags: sdgRaw ? sdgRaw.split(",").map(s => s.trim()) : null,
+    }).eq("id", editItem.id);
+    if (error) toast.error(error.message);
+    else { toast.success("Updated"); qc.invalidateQueries({ queryKey: ["impact_reports"] }); setEditOpen(false); setEditItem(null); }
+  };
+
   return (
     <div>
-      <h2 className="font-display text-2xl font-bold text-foreground mb-6">Impact Reports</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="font-display text-2xl font-bold text-foreground">Impact Reports</h2>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild><Button size="sm"><Plus size={16} className="mr-1" /> Add Report</Button></DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Add Impact Report</DialogTitle></DialogHeader>
+            <form onSubmit={handleAdd} className="space-y-3">
+              <div><Label>Title</Label><Input name="title" required /></div>
+              <div><Label>Date</Label><Input name="date" type="date" /></div>
+              <div><Label>Beneficiaries</Label><Input name="beneficiaries" type="number" /></div>
+              <div><Label>SDG Tags (comma-separated)</Label><Input name="sdg_tags" placeholder="SDG 1, SDG 8, SDG 12" /></div>
+              <Button type="submit" className="w-full">Save</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditItem(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Impact Report</DialogTitle></DialogHeader>
+          {editItem && (
+            <form onSubmit={handleEdit} className="space-y-3">
+              <div><Label>Title</Label><Input name="title" defaultValue={editItem.title} required /></div>
+              <div><Label>Date</Label><Input name="date" type="date" defaultValue={editItem.date || ""} /></div>
+              <div><Label>Beneficiaries</Label><Input name="beneficiaries" type="number" defaultValue={editItem.beneficiaries || 0} /></div>
+              <div><Label>SDG Tags (comma-separated)</Label><Input name="sdg_tags" defaultValue={editItem.sdg_tags?.join(", ") || ""} /></div>
+              <Button type="submit" className="w-full">Update</Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm */}
+      <Dialog open={!!deleteId} onOpenChange={(v) => { if (!v) setDeleteId(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Confirm Delete</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Are you sure you want to delete this report? This action cannot be undone.</p>
+          <div className="flex gap-2 justify-end mt-4">
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {isLoading ? <Skeleton className="h-64" /> : (
-        <div className="space-y-4">
-          {reports?.map((r) => (
-            <div key={r.id} className="bg-card rounded-xl border border-border p-6">
-              <h3 className="font-semibold text-foreground">{r.title}</h3>
-              <p className="text-sm text-muted-foreground mt-1">Date: {r.date} | Beneficiaries: {r.beneficiaries?.toLocaleString()}</p>
-              <div className="flex gap-1 mt-2 flex-wrap">
-                {r.sdg_tags?.map((tag: string) => <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>)}
-              </div>
-            </div>
-          ))}
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted">
+              <tr>
+                <th className="text-left p-4 font-semibold">Title</th>
+                <th className="text-left p-4 font-semibold">Date</th>
+                <th className="text-left p-4 font-semibold">Beneficiaries</th>
+                <th className="text-left p-4 font-semibold">SDG Tags</th>
+                <th className="text-right p-4 font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reports?.map((r) => (
+                <tr key={r.id} className="border-t border-border">
+                  <td className="p-4 font-medium text-foreground">{r.title}</td>
+                  <td className="p-4 text-muted-foreground">{r.date}</td>
+                  <td className="p-4 text-muted-foreground">{r.beneficiaries?.toLocaleString()}</td>
+                  <td className="p-4">
+                    <div className="flex gap-1 flex-wrap">
+                      {r.sdg_tags?.map((tag: string) => <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>)}
+                    </div>
+                  </td>
+                  <td className="p-4 text-right flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(r)}><Pencil size={16} className="text-muted-foreground" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(r.id)}><Trash2 size={16} className="text-destructive" /></Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
