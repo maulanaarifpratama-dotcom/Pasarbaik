@@ -164,6 +164,7 @@ function AdminSuppliers() {
   const { data: suppliers, isLoading } = useSuppliers();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState("");
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("suppliers").delete().eq("id", id);
@@ -180,20 +181,22 @@ function AdminSuppliers() {
       type: fd.get("type") as string,
       location: fd.get("location") as string,
       description: fd.get("description") as string,
+      logo: logoUrl || null,
     });
     if (error) toast.error(error.message);
-    else { toast.success("Added"); qc.invalidateQueries({ queryKey: ["suppliers"] }); setOpen(false); }
+    else { toast.success("Added"); qc.invalidateQueries({ queryKey: ["suppliers"] }); setOpen(false); setLogoUrl(""); }
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-display text-2xl font-bold text-foreground">Manage Suppliers</h2>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setLogoUrl(""); }}>
           <DialogTrigger asChild><Button size="sm"><Plus size={16} className="mr-1" /> Add Supplier</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Add Supplier</DialogTitle></DialogHeader>
             <form onSubmit={handleAdd} className="space-y-3">
+              <div><Label>Logo / Foto</Label><ImageUpload value={logoUrl} onChange={setLogoUrl} folder="suppliers" /></div>
               <div><Label>Name</Label><Input name="name" required /></div>
               <div><Label>Type</Label><Input name="type" placeholder="UMKM / Cooperative" /></div>
               <div><Label>Location</Label><Input name="location" /></div>
@@ -208,6 +211,7 @@ function AdminSuppliers() {
           <table className="w-full text-sm">
             <thead className="bg-muted">
               <tr>
+                <th className="text-left p-4 font-semibold w-16">Logo</th>
                 <th className="text-left p-4 font-semibold">Name</th>
                 <th className="text-left p-4 font-semibold">Type</th>
                 <th className="text-left p-4 font-semibold">Location</th>
@@ -217,6 +221,13 @@ function AdminSuppliers() {
             <tbody>
               {suppliers?.map((s) => (
                 <tr key={s.id} className="border-t border-border">
+                  <td className="p-4">
+                    {s.logo ? (
+                      <img src={s.logo} alt={s.name} className="w-10 h-10 rounded object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded bg-muted flex items-center justify-center"><ImageIcon size={16} className="text-muted-foreground" /></div>
+                    )}
+                  </td>
                   <td className="p-4 font-medium text-foreground">{s.name}</td>
                   <td className="p-4 text-muted-foreground">{s.type}</td>
                   <td className="p-4 text-muted-foreground">{s.location}</td>
