@@ -621,7 +621,7 @@ function AdminRFQ() {
       </header>
       <main className="flex-1 p-6 bg-background overflow-auto">
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(["overview", "products", "suppliers", "programs", "partners", "reports"] as AdminTab[]).map((t) => (
+          {(["overview", "products", "suppliers", "programs", "partners", "rfq", "reports"] as AdminTab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${tab === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
               {t}
