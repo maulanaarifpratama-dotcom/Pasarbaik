@@ -14,11 +14,12 @@ import {
   SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar,
 } from "@/components/ui/sidebar";
 import { NavLink } from "@/components/NavLink";
-import { BarChart3, Package, Users, Building2, FileText, Settings, LogOut, Handshake, Plus, Trash2 } from "lucide-react";
+import { BarChart3, Package, Users, Building2, FileText, LogOut, Handshake, Plus, Trash2, ImageIcon } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
+import { ImageUpload } from "@/components/ImageUpload";
 
 const sidebarItems = [
   { title: "Overview", url: "/admin", icon: BarChart3 },
