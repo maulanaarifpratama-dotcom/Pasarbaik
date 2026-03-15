@@ -92,12 +92,28 @@ function Navbar() {
             </Link>
           ))}
           <div className="px-6 pt-2 space-y-2">
-            <Link to="/login" onClick={() => setMobileOpen(false)}>
-              <Button variant="hero-outline" size="sm" className="w-full">Sign In</Button>
-            </Link>
-            <Link to="/rfq" onClick={() => setMobileOpen(false)}>
-              <Button variant="hero" size="sm" className="w-full">Request Quote</Button>
-            </Link>
+            {user ? (
+              <>
+                {isAdmin && (
+                  <Link to="/admin" onClick={() => setMobileOpen(false)}>
+                    <Button variant="hero-outline" size="sm" className="w-full">Admin Panel</Button>
+                  </Link>
+                )}
+                <Link to="/dashboard" onClick={() => setMobileOpen(false)}>
+                  <Button variant="hero-outline" size="sm" className="w-full">Dashboard</Button>
+                </Link>
+                <Button variant="hero" size="sm" className="w-full" onClick={() => { signOut(); setMobileOpen(false); }}>Sign Out</Button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" onClick={() => setMobileOpen(false)}>
+                  <Button variant="hero-outline" size="sm" className="w-full">Sign In</Button>
+                </Link>
+                <Link to="/rfq" onClick={() => setMobileOpen(false)}>
+                  <Button variant="hero" size="sm" className="w-full">Request Quote</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
