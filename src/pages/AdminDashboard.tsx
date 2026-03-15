@@ -816,6 +816,7 @@ function AdminContent() {
         {tab === "pages" && <AdminPages />}
         {tab === "rfq" && <AdminRFQ />}
         {tab === "reports" && <AdminReports />}
+        {tab === "users" && isAdmin && <AdminUsers />}
       </main>
     </div>
   );
