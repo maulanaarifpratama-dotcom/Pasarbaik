@@ -22,22 +22,29 @@ function LoginPage() {
     setLoading(true);
 
     if (isLogin) {
-      const { error } = await signIn(email, password);
+      const { data: signInData, error } = await signIn(email, password);
       if (error) {
         toast.error(error.message);
       } else {
         toast.success("Signed in successfully!");
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: roles } = await supabase
+        const signedInUser = signInData?.user ?? (await supabase.auth.getUser()).data.user;
+
+        if (signedInUser) {
+          const { data: roles, error: rolesError } = await supabase
             .from("user_roles")
             .select("role")
-            .eq("user_id", user.id);
-          const roleList = roles?.map(r => r.role) || [];
-          if (roleList.includes("admin")) navigate("/admin");
-          else if (roleList.includes("editor")) navigate("/admin");
-          else if (roleList.includes("partner") || roleList.includes("supplier")) navigate("/partner");
-          else navigate("/");
+            .eq("user_id", signedInUser.id);
+
+          if (rolesError) {
+            toast.error(rolesError.message);
+            navigate("/");
+          } else {
+            const roleList = roles?.map(r => r.role) || [];
+            if (roleList.includes("admin")) navigate("/admin");
+            else if (roleList.includes("partner") || roleList.includes("supplier")) navigate("/partner");
+            else if (roleList.includes("editor")) navigate("/dashboard");
+            else navigate("/");
+          }
         } else {
           navigate("/");
         }

@@ -20,7 +20,7 @@ function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const isHome = location.pathname === "/" || location.pathname === "/home";
   const { user, signOut } = useAuth();
-  const { isAdmin, isEditor, isPartner } = useUserRole();
+  const { isAdmin, isPartner } = useUserRole();
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-colors ${isHome ? "bg-primary/80 backdrop-blur-md" : "bg-primary shadow-md"}`}>
@@ -43,12 +43,12 @@ function Navbar() {
           ))}
           {user ? (
             <>
-              {(isAdmin || isEditor) && (
+              {isAdmin && (
                 <Button variant="hero-outline" size="sm" className="ml-2" onClick={() => navigate("/admin")}>
                   Admin Panel
                 </Button>
               )}
-              {isPartner && !isAdmin && !isEditor && (
+              {isPartner && !isAdmin && (
                 <Button variant="hero-outline" size="sm" className="ml-1" onClick={() => navigate("/partner")}>
                   Partner Panel
                 </Button>
@@ -83,12 +83,12 @@ function Navbar() {
           <div className="px-6 pt-2 space-y-2">
             {user ? (
               <>
-                {(isAdmin || isEditor) && (
+                {isAdmin && (
                   <Button variant="hero-outline" size="sm" className="w-full" onClick={() => { navigate("/admin"); setMobileOpen(false); }}>
                     Admin Panel
                   </Button>
                 )}
-                {isPartner && !isAdmin && !isEditor && (
+                {isPartner && !isAdmin && (
                   <Button variant="hero-outline" size="sm" className="w-full" onClick={() => { navigate("/partner"); setMobileOpen(false); }}>
                     Partner Panel
                   </Button>
