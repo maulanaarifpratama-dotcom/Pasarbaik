@@ -1,13 +1,14 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Users, TrendingUp, Briefcase, Building2, Handshake, BarChart3, ShieldCheck, Globe, Leaf, Package } from "lucide-react";
+import { ArrowRight, Users, TrendingUp, Briefcase, Building2, Handshake, BarChart3, ShieldCheck, Globe, Leaf, Package, Heart, MapPin } from "lucide-react";
 import { useProducts, usePartners, useImpactReports, useSuppliers, usePrograms } from "@/hooks/useSupabaseQuery";
 
 function HeroSection() {
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-primary">
       <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-emerald-light opacity-90" />
+      <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1920&h=1080&fit=crop')", backgroundSize: "cover", backgroundPosition: "center" }} />
       <div className="relative z-10 container mx-auto px-4 text-center">
         <div className="inline-flex items-center gap-2 bg-accent/20 border border-accent/30 rounded-full px-4 py-1.5 mb-6 animate-fade-up">
           <Globe size={14} className="text-accent" />
@@ -95,19 +96,26 @@ function MarketplacePreview() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products?.slice(0, 4).map((p) => (
-              <Link key={p.id} to={`/products/${p.slug}`} className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="aspect-square bg-secondary flex items-center justify-center">
-                  <Package className="text-muted-foreground" size={48} />
+            {products?.slice(0, 8).map((p) => (
+              <Link key={p.id} to={`/products/${p.slug}`} className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1">
+                <div className="aspect-square bg-secondary overflow-hidden">
+                  {p.image ? (
+                    <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package className="text-muted-foreground" size={48} />
+                    </div>
+                  )}
                 </div>
                 <div className="p-4">
-                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{p.name}</h3>
+                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">{p.name}</h3>
                   <p className="text-xs text-muted-foreground mt-1">{(p.suppliers as any)?.name}</p>
                   <div className="flex gap-1 mt-2 flex-wrap">
                     {p.impact_tags?.slice(0, 2).map((tag: string) => (
                       <span key={tag} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">{tag}</span>
                     ))}
                   </div>
+                  {p.price && <p className="text-sm font-semibold text-foreground mt-2">{p.price}</p>}
                 </div>
               </Link>
             ))}
@@ -137,7 +145,7 @@ function ImpactMetrics() {
     { value: programs?.length || 0, label: "Active Programs", icon: Building2 },
     { value: products?.length || 0, label: "Products", icon: Package },
     { value: metrics.jobs_created || 0, label: "Jobs Created", icon: Briefcase },
-    { value: metrics.women_workers || 0, label: "Women Workers", icon: Users },
+    { value: metrics.women_workers || 0, label: "Women Workers", icon: Heart },
     { value: metrics.households_supported || 0, label: "Households", icon: BarChart3 },
   ];
 
@@ -147,12 +155,15 @@ function ImpactMetrics() {
         <div className="text-center mb-14">
           <p className="text-accent font-semibold text-xs uppercase tracking-widest mb-2">Measurable Impact</p>
           <h2 className="font-display text-3xl md:text-4xl font-bold text-primary-foreground">Transparent & Traceable</h2>
+          {metrics.revenue_generated && (
+            <p className="text-accent text-xl font-bold mt-3">{metrics.revenue_generated} Revenue Generated</p>
+          )}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
           {stats.map((m, i) => (
-            <div key={i} className="text-center animate-count-up" style={{ animationDelay: `${i * 0.1}s` }}>
+            <div key={i} className="text-center bg-primary-foreground/5 rounded-xl p-6 backdrop-blur-sm animate-count-up" style={{ animationDelay: `${i * 0.1}s` }}>
               <m.icon className="mx-auto mb-3 text-accent" size={28} />
-              <div className="font-display text-2xl md:text-3xl font-bold text-primary-foreground mb-1">{m.value}+</div>
+              <div className="font-display text-2xl md:text-3xl font-bold text-primary-foreground mb-1">{typeof m.value === 'number' ? m.value.toLocaleString() : m.value}+</div>
               <div className="text-primary-foreground/60 text-xs">{m.label}</div>
             </div>
           ))}
@@ -167,23 +178,70 @@ function ImpactMetrics() {
   );
 }
 
+function ProgramsPreview() {
+  const { data: programs, isLoading } = usePrograms();
+
+  return (
+    <section className="py-20 bg-background">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-14">
+          <p className="text-accent font-semibold text-xs uppercase tracking-widest mb-2">Development Programs</p>
+          <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">Powered by Impact Programs</h2>
+        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-48 rounded-xl" />)}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {programs?.slice(0, 6).map((p) => (
+              <Link key={p.id} to={`/programs/${p.slug}`} className="group bg-card rounded-xl border border-border p-6 hover:shadow-lg transition-all hover:-translate-y-1">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Building2 className="text-primary" size={20} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">{p.title}</h3>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1"><MapPin size={10} /> {p.location}</span>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{p.description}</p>
+                <div className="flex gap-1 flex-wrap">
+                  {p.impact_tags?.slice(0, 2).map((tag: string) => (
+                    <span key={tag} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">{tag}</span>
+                  ))}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+        <div className="text-center mt-10">
+          <Link to="/programs">
+            <Button variant="outline" size="lg">View All Programs <ArrowRight className="ml-1" size={18} /></Button>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function PartnersSection() {
   const { data: partners, isLoading } = usePartners();
 
   return (
-    <section className="py-16 bg-background">
+    <section className="py-16 bg-muted">
       <div className="container mx-auto px-4 text-center">
         <p className="text-muted-foreground text-xs uppercase tracking-widest mb-2">Trusted Partners</p>
         <h3 className="font-display text-xl font-semibold text-foreground mb-8">Organizations Powering Impact</h3>
         {isLoading ? (
           <div className="flex gap-10 justify-center">
-            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-12 w-32" />)}
+            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-16 w-36 rounded-xl" />)}
           </div>
         ) : (
-          <div className="flex flex-wrap justify-center items-center gap-10">
+          <div className="flex flex-wrap justify-center items-center gap-6">
             {partners?.map((p) => (
-              <div key={p.id} className="text-center">
-                <div className="text-base font-semibold text-foreground/50 font-display">{p.name}</div>
+              <div key={p.id} className="bg-card rounded-xl border border-border px-6 py-4 min-w-[140px]">
+                <div className="text-sm font-semibold text-foreground font-display">{p.name}</div>
                 <div className="text-xs text-muted-foreground mt-1">{p.type}</div>
               </div>
             ))}
@@ -217,6 +275,7 @@ function Index() {
       <HeroSection />
       <FlowSection />
       <MarketplacePreview />
+      <ProgramsPreview />
       <ImpactMetrics />
       <PartnersSection />
       <CTASection />
