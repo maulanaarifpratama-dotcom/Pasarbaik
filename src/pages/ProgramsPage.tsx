@@ -1,168 +1,151 @@
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Users, Building2, Leaf, ArrowRight } from "lucide-react";
-import { programs, getOrganization, getSuppliersByProgram, getProductsByProgram } from "@/data/mockData";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MapPin, ArrowLeft, Building2, Package, Users } from "lucide-react";
+import { usePrograms, useProgram, useProducts, useSuppliers } from "@/hooks/useSupabaseQuery";
 
-function ProgramsList() {
+export function ProgramsList() {
+  const { data: programs, isLoading } = usePrograms();
+
   return (
     <main className="pt-16">
-      <section className="bg-primary py-14">
+      <section className="bg-primary py-12">
         <div className="container mx-auto px-4">
-          <h1 className="font-display text-3xl md:text-4xl font-bold text-primary-foreground mb-2">Development Programs</h1>
-          <p className="text-primary-foreground/70">Program CSR, NGO, dan pemerintah yang menjadi sumber produk berdampak.</p>
+          <h1 className="font-display text-3xl font-bold text-primary-foreground">Programs</h1>
+          <p className="text-primary-foreground/60 mt-2">CSR, NGO, and government development programs</p>
         </div>
       </section>
 
-      <section className="container mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {programs.map((prog) => {
-            const org = getOrganization(prog.organizationId);
-            return (
-              <div key={prog.id} className="bg-card rounded-xl p-6 border border-border shadow-sm hover:shadow-lg transition-shadow">
-                <Badge variant="outline" className="mb-3 text-xs">{org?.type}</Badge>
-                <h3 className="font-semibold text-card-foreground text-lg mb-1">{prog.name}</h3>
-                <p className="text-muted-foreground text-xs mb-3">{org?.name}</p>
-                <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{prog.description}</p>
-                <div className="space-y-1.5 text-xs text-muted-foreground mb-4">
-                  <div className="flex items-center gap-1"><MapPin size={12} /> {prog.location}</div>
-                  <div className="flex items-center gap-1"><Calendar size={12} /> Since {prog.startYear}</div>
-                  <div className="flex items-center gap-1"><Users size={12} /> {prog.suppliersCount} suppliers · {prog.productsCount} products</div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <Badge className={prog.status === "Active" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}>{prog.status}</Badge>
-                  <Link to={`/programs/${prog.id}`}>
-                    <Button variant="outline" size="sm" className="text-xs">View Program</Button>
-                  </Link>
-                </div>
+      <section className="container mx-auto px-4 py-8">
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-card rounded-xl border border-border p-6">
+                <Skeleton className="h-6 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/2 mb-4" />
+                <Skeleton className="h-16 w-full" />
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {programs?.map((p) => (
+              <Link key={p.id} to={`/programs/${p.slug}`} className="bg-card rounded-xl border border-border p-6 hover:shadow-lg transition-shadow group">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Building2 className="text-primary" size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{p.title}</h3>
+                    <div className="flex gap-2 items-center">
+                      <Badge variant="outline" className="text-xs">{p.category}</Badge>
+                      <span className="text-xs text-muted-foreground flex items-center gap-1"><MapPin size={12} /> {p.location}</span>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground line-clamp-2">{p.description}</p>
+                <div className="flex gap-1 mt-3 flex-wrap">
+                  {p.impact_tags?.map((tag: string) => (
+                    <span key={tag} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">{tag}</span>
+                  ))}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
     </main>
   );
 }
 
-function ProgramDetail() {
-  const { id } = useParams();
-  const program = programs.find(p => p.id === id);
+export function ProgramDetail() {
+  const { slug } = useParams<{ slug: string }>();
+  const { data: program, isLoading } = useProgram(slug || "");
+  const { data: products } = useProducts();
+  const { data: suppliers } = useSuppliers();
 
-  if (!program) {
+  const programProducts = products?.filter((p) => p.program_id === program?.id);
+  const programSupplierIds = new Set(programProducts?.map((p) => p.supplier_id).filter(Boolean));
+  const programSuppliers = suppliers?.filter((s) => programSupplierIds.has(s.id));
+
+  if (isLoading) {
     return (
-      <main className="pt-16 min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="font-display text-2xl font-bold text-foreground mb-4">Program not found</h2>
-          <Link to="/programs"><Button>Back to Programs</Button></Link>
+      <main className="pt-16">
+        <div className="container mx-auto px-4 py-12">
+          <Skeleton className="h-10 w-64 mb-4" />
+          <Skeleton className="h-6 w-48" />
         </div>
       </main>
     );
   }
 
-  const org = getOrganization(program.organizationId);
-  const programSuppliers = getSuppliersByProgram(program.id);
-  const programProducts = getProductsByProgram(program.id);
-
-  const totalJobs = programProducts.reduce((s, p) => s + p.metrics.jobsCreated, 0);
-  const totalWomen = programProducts.reduce((s, p) => s + p.metrics.womenWorkers, 0);
-  const totalHouseholds = programProducts.reduce((s, p) => s + p.metrics.householdsSupported, 0);
+  if (!program) {
+    return (
+      <main className="pt-16">
+        <div className="container mx-auto px-4 py-20 text-center">
+          <p className="text-muted-foreground">Program not found.</p>
+          <Link to="/programs"><Button variant="outline" className="mt-4">Back</Button></Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="pt-16">
-      <section className="bg-primary py-8">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center gap-2 text-primary-foreground/60 text-sm mb-2">
-            <Link to="/programs" className="hover:text-accent transition-colors">Programs</Link>
-            <span>/</span>
-            <span className="text-primary-foreground">{program.name}</span>
+      <div className="container mx-auto px-4 py-8">
+        <Link to="/programs" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8">
+          <ArrowLeft size={16} /> Back to Programs
+        </Link>
+
+        <div className="bg-card rounded-xl border border-border p-8 mb-8">
+          <Badge className="mb-3">{program.category}</Badge>
+          <h1 className="font-display text-3xl font-bold text-foreground">{program.title}</h1>
+          <p className="flex items-center gap-1 text-muted-foreground mt-2"><MapPin size={16} /> {program.location}</p>
+          <p className="text-muted-foreground mt-4">{program.description}</p>
+          <div className="flex gap-2 mt-4 flex-wrap">
+            {program.impact_tags?.map((tag: string) => (
+              <Badge key={tag} variant="secondary">{tag}</Badge>
+            ))}
           </div>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="font-display text-3xl font-bold text-primary-foreground">{program.name}</h1>
-            <Badge className="bg-accent text-accent-foreground">{program.status}</Badge>
-          </div>
-          <p className="text-primary-foreground/70">{org?.name} · {org?.type}</p>
         </div>
-      </section>
 
-      <section className="container mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-card rounded-xl border border-border p-5">
-              <h3 className="font-semibold text-foreground mb-3">Program Info</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Organization</span><span className="text-foreground">{org?.name}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Type</span><Badge variant="outline" className="text-xs">{org?.type}</Badge></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Location</span><span className="text-foreground">{program.location}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Start Year</span><span className="text-foreground">{program.startYear}</span></div>
-              </div>
-            </div>
-
-            <div className="bg-card rounded-xl border border-border p-5">
-              <h3 className="font-semibold text-foreground mb-3">Impact Summary</h3>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { v: programSuppliers.length, l: "Suppliers" },
-                  { v: programProducts.length, l: "Products" },
-                  { v: totalJobs, l: "Jobs Created" },
-                  { v: totalWomen, l: "Women Workers" },
-                  { v: totalHouseholds, l: "Households" },
-                ].map((m, i) => (
-                  <div key={i} className="text-center bg-secondary/50 rounded-lg p-3">
-                    <div className="font-display text-lg font-bold text-primary">{m.v}</div>
-                    <div className="text-xs text-muted-foreground">{m.l}</div>
-                  </div>
-                ))}
-              </div>
+        <div className="grid md:grid-cols-2 gap-8">
+          <div>
+            <h2 className="font-display text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Users size={18} className="text-primary" /> Suppliers ({programSuppliers?.length || 0})
+            </h2>
+            <div className="space-y-3">
+              {programSuppliers?.map((s) => (
+                <Link key={s.id} to={`/suppliers/${s.slug}`} className="block bg-muted rounded-lg p-4 hover:bg-muted/80 transition-colors">
+                  <p className="font-medium text-foreground">{s.name}</p>
+                  <p className="text-xs text-muted-foreground">{s.location}</p>
+                </Link>
+              ))}
+              {(!programSuppliers || programSuppliers.length === 0) && (
+                <p className="text-sm text-muted-foreground">No suppliers linked yet.</p>
+              )}
             </div>
           </div>
 
-          <div className="lg:col-span-2 space-y-8">
-            <div>
-              <h2 className="font-display text-2xl font-bold text-foreground mb-3">About This Program</h2>
-              <p className="text-muted-foreground leading-relaxed">{program.description}</p>
-              <p className="text-muted-foreground leading-relaxed mt-3">{org?.description}</p>
-            </div>
-
-            <div>
-              <h2 className="font-display text-2xl font-bold text-foreground mb-4">Suppliers ({programSuppliers.length})</h2>
-              <div className="space-y-3">
-                {programSuppliers.map((s) => (
-                  <Link key={s.id} to={`/suppliers/${s.id}`} className="block bg-card rounded-xl border border-border p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold text-card-foreground text-sm">{s.name}</h3>
-                        <p className="text-xs text-muted-foreground">{s.owner} · {s.location}</p>
-                      </div>
-                      <ArrowRight size={16} className="text-muted-foreground" />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h2 className="font-display text-2xl font-bold text-foreground mb-4">Products ({programProducts.length})</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {programProducts.map((p) => (
-                  <Link key={p.id} to={`/products/${p.id}`} className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="aspect-[16/9] overflow-hidden">
-                      <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-semibold text-card-foreground text-sm">{p.name}</h3>
-                      <p className="text-xs text-muted-foreground mt-1">{p.price}</p>
-                      <Badge variant="secondary" className="text-[10px] mt-2"><Leaf size={8} className="mr-1" />{p.impactBadge}</Badge>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+          <div>
+            <h2 className="font-display text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Package size={18} className="text-primary" /> Products ({programProducts?.length || 0})
+            </h2>
+            <div className="space-y-3">
+              {programProducts?.map((p) => (
+                <Link key={p.id} to={`/products/${p.slug}`} className="block bg-muted rounded-lg p-4 hover:bg-muted/80 transition-colors">
+                  <p className="font-medium text-foreground">{p.name}</p>
+                  <p className="text-xs text-muted-foreground">{p.category}</p>
+                </Link>
+              ))}
+              {(!programProducts || programProducts.length === 0) && (
+                <p className="text-sm text-muted-foreground">No products linked yet.</p>
+              )}
             </div>
           </div>
         </div>
-      </section>
+      </div>
     </main>
   );
 }
-
-export { ProgramsList, ProgramDetail };
-export default ProgramsList;

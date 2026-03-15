@@ -1,182 +1,122 @@
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, CheckCircle, Package, Users, Calendar, Building2, ArrowRight, Leaf } from "lucide-react";
-import { getSupplier, getProgram, getOrganization, getProductsBySupplier, suppliers } from "@/data/mockData";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MapPin, ArrowLeft, Users, Package } from "lucide-react";
+import { useSuppliers, useSupplier, useProducts } from "@/hooks/useSupabaseQuery";
 
-function SuppliersList() {
+export function SuppliersList() {
+  const { data: suppliers, isLoading } = useSuppliers();
+
   return (
     <main className="pt-16">
-      <section className="bg-primary py-14">
+      <section className="bg-primary py-12">
         <div className="container mx-auto px-4">
-          <h1 className="font-display text-3xl md:text-4xl font-bold text-primary-foreground mb-2">UMKM Suppliers</h1>
-          <p className="text-primary-foreground/70">Supplier terverifikasi dari program pembinaan CSR, NGO, dan pemerintah.</p>
+          <h1 className="font-display text-3xl font-bold text-primary-foreground">Suppliers</h1>
+          <p className="text-primary-foreground/60 mt-2">Verified UMKM suppliers from impact programs</p>
         </div>
       </section>
 
-      <section className="container mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {suppliers.map((s) => {
-            const program = getProgram(s.programId);
-            const products = getProductsBySupplier(s.id);
-            return (
-              <div key={s.id} className="bg-card rounded-xl p-6 border border-border shadow-sm hover:shadow-lg transition-shadow">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="font-semibold text-card-foreground">{s.name}</h3>
-                    <p className="text-muted-foreground text-sm">{s.owner}</p>
-                  </div>
-                  {s.verified && (
-                    <Badge className="bg-primary text-primary-foreground gap-1 shrink-0">
-                      <CheckCircle size={12} /> Verified
-                    </Badge>
-                  )}
-                </div>
-                <div className="space-y-1.5 text-xs text-muted-foreground mb-3">
-                  <div className="flex items-center gap-1"><MapPin size={12} /> {s.location}</div>
-                  <div className="flex items-center gap-1"><Building2 size={12} /> Program: {program?.name}</div>
-                  <div className="flex items-center gap-1"><Calendar size={12} /> Since {s.year}</div>
-                  <div>Kapasitas: {s.capacity}</div>
-                  <div className="flex items-center gap-1"><Package size={12} /> {products.length} produk</div>
-                  <div className="flex items-center gap-1"><Users size={12} /> {s.workers} pekerja ({s.womenWorkers} perempuan)</div>
-                </div>
-                {s.certifications.length > 0 && (
-                  <div className="flex gap-1.5 flex-wrap mb-4">
-                    {s.certifications.map((c) => (
-                      <Badge key={c} variant="secondary" className="text-xs">{c}</Badge>
-                    ))}
-                  </div>
-                )}
-                <Link to={`/suppliers/${s.id}`}>
-                  <Button variant="outline" size="sm" className="w-full">View Profile</Button>
-                </Link>
+      <section className="container mx-auto px-4 py-8">
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-card rounded-xl border border-border p-6">
+                <Skeleton className="h-12 w-12 rounded-xl mb-4" />
+                <Skeleton className="h-6 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/2" />
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {suppliers?.map((s) => (
+              <Link key={s.id} to={`/suppliers/${s.slug}`} className="bg-card rounded-xl border border-border p-6 hover:shadow-lg transition-shadow group">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+                  <Users className="text-primary" size={24} />
+                </div>
+                <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors">{s.name}</h3>
+                <Badge variant="outline" className="mt-1">{s.type}</Badge>
+                <p className="flex items-center gap-1 text-sm text-muted-foreground mt-2">
+                  <MapPin size={14} /> {s.location}
+                </p>
+                <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{s.description}</p>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
     </main>
   );
 }
 
-function SupplierProfile() {
-  const { id } = useParams();
-  const supplier = getSupplier(id || "");
+export function SupplierProfile() {
+  const { slug } = useParams<{ slug: string }>();
+  const { data: supplier, isLoading } = useSupplier(slug || "");
+  const { data: products } = useProducts();
 
-  if (!supplier) {
+  const supplierProducts = products?.filter((p) => p.supplier_id === supplier?.id);
+
+  if (isLoading) {
     return (
-      <main className="pt-16 min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="font-display text-2xl font-bold text-foreground mb-4">Supplier not found</h2>
-          <Link to="/suppliers"><Button>Back to Suppliers</Button></Link>
+      <main className="pt-16">
+        <div className="container mx-auto px-4 py-12">
+          <Skeleton className="h-10 w-64 mb-4" />
+          <Skeleton className="h-6 w-48" />
         </div>
       </main>
     );
   }
 
-  const program = getProgram(supplier.programId);
-  const organization = program ? getOrganization(program.organizationId) : null;
-  const products = getProductsBySupplier(supplier.id);
+  if (!supplier) {
+    return (
+      <main className="pt-16">
+        <div className="container mx-auto px-4 py-20 text-center">
+          <p className="text-muted-foreground">Supplier not found.</p>
+          <Link to="/suppliers"><Button variant="outline" className="mt-4">Back</Button></Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="pt-16">
-      <section className="bg-primary py-8">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center gap-2 text-primary-foreground/60 text-sm mb-2">
-            <Link to="/suppliers" className="hover:text-accent transition-colors">Suppliers</Link>
-            <span>/</span>
-            <span className="text-primary-foreground">{supplier.name}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <h1 className="font-display text-3xl font-bold text-primary-foreground">{supplier.name}</h1>
-            {supplier.verified && <Badge className="bg-accent text-accent-foreground gap-1"><CheckCircle size={12} /> Verified</Badge>}
-          </div>
-          <p className="text-primary-foreground/70 mt-1">{supplier.owner} · {supplier.location}</p>
-        </div>
-      </section>
+      <div className="container mx-auto px-4 py-8">
+        <Link to="/suppliers" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8">
+          <ArrowLeft size={16} /> Back to Suppliers
+        </Link>
 
-      <section className="container mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left: Info */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-card rounded-xl border border-border p-5">
-              <h3 className="font-semibold text-foreground mb-3">Business Info</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Category</span><span className="text-foreground">{supplier.category}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Location</span><span className="text-foreground">{supplier.location}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Since</span><span className="text-foreground">{supplier.year}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Capacity</span><span className="text-foreground">{supplier.capacity}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Revenue</span><span className="text-foreground">{supplier.revenue}</span></div>
-              </div>
+        <div className="bg-card rounded-xl border border-border p-8 mb-8">
+          <div className="flex items-start gap-6">
+            <div className="w-20 h-20 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Users className="text-primary" size={36} />
             </div>
-
-            <div className="bg-card rounded-xl border border-border p-5">
-              <h3 className="font-semibold text-foreground mb-3">Impact Data</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="text-center bg-secondary/50 rounded-lg p-3">
-                  <div className="font-display text-xl font-bold text-primary">{supplier.workers}</div>
-                  <div className="text-xs text-muted-foreground">Workers</div>
-                </div>
-                <div className="text-center bg-secondary/50 rounded-lg p-3">
-                  <div className="font-display text-xl font-bold text-primary">{supplier.womenWorkers}</div>
-                  <div className="text-xs text-muted-foreground">Women</div>
-                </div>
-              </div>
-            </div>
-
-            {supplier.certifications.length > 0 && (
-              <div className="bg-card rounded-xl border border-border p-5">
-                <h3 className="font-semibold text-foreground mb-3">Certifications</h3>
-                <div className="flex gap-2 flex-wrap">
-                  {supplier.certifications.map((c) => (
-                    <Badge key={c} className="bg-primary text-primary-foreground">{c}</Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {program && organization && (
-              <div className="bg-card rounded-xl border border-border p-5">
-                <h3 className="font-semibold text-foreground mb-3">Program Origin</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Program</span><Link to={`/programs/${program.id}`} className="text-primary hover:underline">{program.name}</Link></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Organization</span><span className="text-foreground">{organization.name}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Type</span><Badge variant="outline" className="text-xs">{organization.type}</Badge></div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Right: Description & Products */}
-          <div className="lg:col-span-2 space-y-8">
             <div>
-              <h2 className="font-display text-2xl font-bold text-foreground mb-3">About</h2>
-              <p className="text-muted-foreground leading-relaxed">{supplier.description}</p>
-            </div>
-
-            <div>
-              <h2 className="font-display text-2xl font-bold text-foreground mb-4">Products ({products.length})</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {products.map((p) => (
-                  <Link key={p.id} to={`/products/${p.id}`} className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="aspect-[16/9] overflow-hidden">
-                      <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-semibold text-card-foreground text-sm">{p.name}</h3>
-                      <p className="text-xs text-muted-foreground mt-1">{p.price}</p>
-                      <Badge variant="secondary" className="text-[10px] mt-2"><Leaf size={8} className="mr-1" />{p.impactBadge}</Badge>
-                    </div>
-                  </Link>
-                ))}
+              <h1 className="font-display text-3xl font-bold text-foreground">{supplier.name}</h1>
+              <div className="flex gap-2 mt-2">
+                <Badge>{supplier.type}</Badge>
+                <span className="flex items-center gap-1 text-sm text-muted-foreground"><MapPin size={14} /> {supplier.location}</span>
               </div>
+              <p className="text-muted-foreground mt-4">{supplier.description}</p>
             </div>
           </div>
         </div>
-      </section>
+
+        <h2 className="font-display text-xl font-semibold text-foreground mb-4">Products ({supplierProducts?.length || 0})</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {supplierProducts?.map((p) => (
+            <Link key={p.id} to={`/products/${p.slug}`} className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="aspect-video bg-secondary flex items-center justify-center">
+                <Package className="text-muted-foreground" size={36} />
+              </div>
+              <div className="p-4">
+                <h3 className="font-semibold text-foreground">{p.name}</h3>
+                <p className="text-xs text-muted-foreground">{p.category}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
     </main>
   );
 }
-
-export { SuppliersList, SupplierProfile };
-export default SuppliersList;
