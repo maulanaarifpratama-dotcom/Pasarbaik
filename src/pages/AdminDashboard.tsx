@@ -746,7 +746,7 @@ function AdminContent() {
   const navigate = useNavigate();
 
   const pathSegment = location.pathname.replace("/admin", "").replace("/", "") || "overview";
-  const tab = (["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "reports"].includes(pathSegment) ? pathSegment : "overview") as AdminTab;
+  const tab = (["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "reports", "users"].includes(pathSegment) ? pathSegment : "overview") as AdminTab;
 
   const tabRouteMap: Record<AdminTab, string> = {
     overview: "/admin",
