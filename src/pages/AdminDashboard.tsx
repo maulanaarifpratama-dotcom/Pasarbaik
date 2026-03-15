@@ -86,6 +86,8 @@ type AdminTab = "overview" | "products" | "suppliers" | "programs" | "partners" 
 // AdminProducts is now imported from @/components/admin/ProductEditor
 
 // AdminSuppliers is now imported from @/components/admin/SupplierEditor
+
+function AdminPrograms() {
   const { data: programs, isLoading } = usePrograms();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
