@@ -21,6 +21,7 @@ import {
 import { ImageUpload } from "@/components/ImageUpload";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { AdminProducts } from "@/components/admin/ProductEditor";
+import { AdminSuppliers } from "@/components/admin/SupplierEditor";
 
 const sidebarItems = [
   { title: "Dashboard", url: "/dashboard", icon: BarChart3 },
@@ -84,147 +85,7 @@ type AdminTab = "overview" | "products" | "suppliers" | "programs" | "partners" 
 
 // AdminProducts is now imported from @/components/admin/ProductEditor
 
-function AdminSuppliers() {
-  const { data: suppliers, isLoading } = useSuppliers();
-  const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [logoUrl, setLogoUrl] = useState("");
-  const [editItem, setEditItem] = useState<any>(null);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editLogoUrl, setEditLogoUrl] = useState("");
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    const { error } = await supabase.from("suppliers").delete().eq("id", deleteId);
-    if (error) toast.error(error.message);
-    else { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["suppliers"] }); }
-    setDeleteId(null);
-  };
-
-  const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const { error } = await supabase.from("suppliers").insert({
-      name: fd.get("name") as string,
-      slug: (fd.get("name") as string).toLowerCase().replace(/\s+/g, "-"),
-      type: fd.get("type") as string,
-      location: fd.get("location") as string,
-      description: fd.get("description") as string,
-      logo: logoUrl || null,
-    });
-    if (error) toast.error(error.message);
-    else { toast.success("Added"); qc.invalidateQueries({ queryKey: ["suppliers"] }); setOpen(false); setLogoUrl(""); }
-  };
-
-  const openEdit = (s: any) => {
-    setEditItem(s);
-    setEditLogoUrl(s.logo || "");
-    setEditOpen(true);
-  };
-
-  const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const { error } = await supabase.from("suppliers").update({
-      name: fd.get("name") as string,
-      slug: (fd.get("name") as string).toLowerCase().replace(/\s+/g, "-"),
-      type: fd.get("type") as string,
-      location: fd.get("location") as string,
-      description: fd.get("description") as string,
-      logo: editLogoUrl || null,
-    }).eq("id", editItem.id);
-    if (error) toast.error(error.message);
-    else { toast.success("Updated"); qc.invalidateQueries({ queryKey: ["suppliers"] }); setEditOpen(false); setEditItem(null); }
-  };
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="font-display text-2xl font-bold text-foreground">Manage Suppliers</h2>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setLogoUrl(""); }}>
-          <DialogTrigger asChild><Button size="sm"><Plus size={16} className="mr-1" /> Add Supplier</Button></DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Add Supplier</DialogTitle></DialogHeader>
-            <form onSubmit={handleAdd} className="space-y-3">
-              <div><Label>Logo / Foto</Label><ImageUpload value={logoUrl} onChange={setLogoUrl} folder="suppliers" /></div>
-              <div><Label>Name</Label><Input name="name" required /></div>
-              <div><Label>Type</Label><Input name="type" placeholder="UMKM / Cooperative" /></div>
-              <div><Label>Location</Label><Input name="location" /></div>
-              <div><Label>Description</Label><Input name="description" /></div>
-              <Button type="submit" className="w-full">Save</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Edit Dialog */}
-      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditItem(null); }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Edit Supplier</DialogTitle></DialogHeader>
-          {editItem && (
-            <form onSubmit={handleEdit} className="space-y-3">
-              <div><Label>Logo / Foto</Label><ImageUpload value={editLogoUrl} onChange={setEditLogoUrl} folder="suppliers" /></div>
-              <div><Label>Name</Label><Input name="name" defaultValue={editItem.name} required /></div>
-              <div><Label>Type</Label><Input name="type" defaultValue={editItem.type || ""} placeholder="UMKM / Cooperative" /></div>
-              <div><Label>Location</Label><Input name="location" defaultValue={editItem.location || ""} /></div>
-              <div><Label>Description</Label><Input name="description" defaultValue={editItem.description || ""} /></div>
-              <Button type="submit" className="w-full">Update</Button>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirm */}
-      <Dialog open={!!deleteId} onOpenChange={(v) => { if (!v) setDeleteId(null); }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Confirm Delete</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">Are you sure you want to delete this supplier? This action cannot be undone.</p>
-          <div className="flex gap-2 justify-end mt-4">
-            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {isLoading ? <Skeleton className="h-64" /> : (
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-muted">
-              <tr>
-                <th className="text-left p-4 font-semibold w-16">Logo</th>
-                <th className="text-left p-4 font-semibold">Name</th>
-                <th className="text-left p-4 font-semibold">Type</th>
-                <th className="text-left p-4 font-semibold">Location</th>
-                <th className="text-right p-4 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {suppliers?.map((s) => (
-                <tr key={s.id} className="border-t border-border">
-                  <td className="p-4">
-                    {s.logo ? (
-                      <img src={s.logo} alt={s.name} className="w-10 h-10 rounded object-cover" />
-                    ) : (
-                      <div className="w-10 h-10 rounded bg-muted flex items-center justify-center"><ImageIcon size={16} className="text-muted-foreground" /></div>
-                    )}
-                  </td>
-                  <td className="p-4 font-medium text-foreground">{s.name}</td>
-                  <td className="p-4 text-muted-foreground">{s.type}</td>
-                  <td className="p-4 text-muted-foreground">{s.location}</td>
-                  <td className="p-4 text-right flex items-center justify-end gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil size={16} className="text-muted-foreground" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(s.id)}><Trash2 size={16} className="text-destructive" /></Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
+// AdminSuppliers is now imported from @/components/admin/SupplierEditor
 
 function AdminPrograms() {
   const { data: programs, isLoading } = usePrograms();
