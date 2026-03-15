@@ -77,6 +77,9 @@ function AdminProducts() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+  const [editItem, setEditItem] = useState<any>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editImageUrl, setEditImageUrl] = useState("");
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("products").delete().eq("id", id);
@@ -100,6 +103,28 @@ function AdminProducts() {
     else { toast.success("Added"); qc.invalidateQueries({ queryKey: ["products"] }); setOpen(false); setImageUrl(""); }
   };
 
+  const openEdit = (p: any) => {
+    setEditItem(p);
+    setEditImageUrl(p.image || "");
+    setEditOpen(true);
+  };
+
+  const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const { error } = await supabase.from("products").update({
+      name: fd.get("name") as string,
+      slug: (fd.get("name") as string).toLowerCase().replace(/\s+/g, "-"),
+      category: fd.get("category") as string,
+      price: fd.get("price") as string,
+      moq: fd.get("moq") as string,
+      description: fd.get("description") as string,
+      image: editImageUrl || null,
+    }).eq("id", editItem.id);
+    if (error) toast.error(error.message);
+    else { toast.success("Updated"); qc.invalidateQueries({ queryKey: ["products"] }); setEditOpen(false); setEditItem(null); }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -120,6 +145,25 @@ function AdminProducts() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditItem(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Product</DialogTitle></DialogHeader>
+          {editItem && (
+            <form onSubmit={handleEdit} className="space-y-3">
+              <div><Label>Gambar Produk</Label><ImageUpload value={editImageUrl} onChange={setEditImageUrl} folder="products" /></div>
+              <div><Label>Name</Label><Input name="name" defaultValue={editItem.name} required /></div>
+              <div><Label>Category</Label><Input name="category" defaultValue={editItem.category || ""} /></div>
+              <div><Label>Price</Label><Input name="price" defaultValue={editItem.price || ""} /></div>
+              <div><Label>MOQ</Label><Input name="moq" defaultValue={editItem.moq || ""} /></div>
+              <div><Label>Description</Label><Input name="description" defaultValue={editItem.description || ""} /></div>
+              <Button type="submit" className="w-full">Update</Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {isLoading ? <Skeleton className="h-64" /> : (
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <table className="w-full text-sm">
@@ -147,7 +191,8 @@ function AdminProducts() {
                   <td className="p-4 text-muted-foreground">{p.category}</td>
                   <td className="p-4 text-muted-foreground">{p.price}</td>
                   <td className="p-4"><Badge variant="secondary">{p.status}</Badge></td>
-                  <td className="p-4 text-right">
+                  <td className="p-4 text-right flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil size={16} className="text-muted-foreground" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}><Trash2 size={16} className="text-destructive" /></Button>
                   </td>
                 </tr>
