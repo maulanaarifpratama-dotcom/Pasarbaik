@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -26,7 +27,18 @@ function LoginPage() {
         toast.error(error.message);
       } else {
         toast.success("Signed in successfully!");
-        navigate("/dashboard");
+        // Check if user has admin role
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: roles } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", user.id);
+          const isAdmin = roles?.some((r) => r.role === "admin");
+          navigate(isAdmin ? "/admin" : "/dashboard");
+        } else {
+          navigate("/dashboard");
+        }
       }
     } else {
       const { error } = await signUp(email, password, name);
