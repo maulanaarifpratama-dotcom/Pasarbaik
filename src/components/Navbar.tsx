@@ -48,7 +48,7 @@ function Navbar() {
                   Admin Panel
                 </Button>
               )}
-              {isPartner && !isAdmin && !isEditor && (
+              {isPartner && !isAdmin && (
                 <Button variant="hero-outline" size="sm" className="ml-1" onClick={() => navigate("/partner")}>
                   Partner Panel
                 </Button>
