@@ -2,8 +2,9 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Building2, Package, Briefcase, TrendingUp, BarChart3, Globe, Heart, Leaf, DollarSign, Target, ArrowRight } from "lucide-react";
+import { Users, Building2, Package, Briefcase, TrendingUp, BarChart3, Globe, Heart, Leaf, DollarSign, Target, ArrowRight, Download } from "lucide-react";
 import { useImpactReports, useSuppliers, usePrograms, useProducts } from "@/hooks/useSupabaseQuery";
+import { generateImpactPDF } from "@/lib/generateImpactPDF";
 
 const sdgColors: Record<string, string> = {
   "SDG 1": "bg-red-500/10 text-red-700 border-red-200",
