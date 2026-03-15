@@ -42,14 +42,16 @@ function Navbar() {
           ))}
           {user ? (
             <>
-              {isAdmin && (
+              {(isAdmin || isEditor) && (
                 <Link to="/admin">
                   <Button variant="hero-outline" size="sm" className="ml-2">Admin Panel</Button>
                 </Link>
               )}
-              <Link to="/dashboard">
-                <Button variant="hero-outline" size="sm" className="ml-1">Dashboard</Button>
-              </Link>
+              {isPartner && (
+                <Link to="/dashboard">
+                  <Button variant="hero-outline" size="sm" className="ml-1">Dashboard</Button>
+                </Link>
+              )}
               <Button variant="hero" size="sm" className="ml-1" onClick={signOut}>Sign Out</Button>
             </>
           ) : (
