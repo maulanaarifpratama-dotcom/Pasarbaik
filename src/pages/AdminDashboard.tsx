@@ -820,15 +820,17 @@ function AdminContent() {
 
 function AdminDashboard() {
   const { user, loading } = useAuth();
+  const { isAdmin, isEditor, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate("/login");
+    if (!loading && !roleLoading) {
+      if (!user) navigate("/login");
+      else if (!isAdmin && !isEditor) navigate("/");
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, roleLoading, isAdmin, isEditor, navigate]);
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Skeleton className="h-12 w-48" />
@@ -836,7 +838,7 @@ function AdminDashboard() {
     );
   }
 
-  if (!user) return null;
+  if (!user || (!isAdmin && !isEditor)) return null;
 
   return (
     <SidebarProvider>
