@@ -88,7 +88,7 @@ function Navbar() {
                     Admin Panel
                   </Button>
                 )}
-                {isPartner && !isAdmin && !isEditor && (
+                {isPartner && !isAdmin && (
                   <Button variant="hero-outline" size="sm" className="w-full" onClick={() => { navigate("/partner"); setMobileOpen(false); }}>
                     Partner Panel
                   </Button>
