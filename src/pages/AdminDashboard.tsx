@@ -34,6 +34,7 @@ const sidebarItems = [
   { title: "Pages", url: "/admin/pages", icon: FileEdit },
   { title: "RFQ", url: "/admin/rfq", icon: Inbox },
   { title: "Reports", url: "/admin/reports", icon: FileText },
+  { title: "Users", url: "/admin/users", icon: Users, adminOnly: true },
 ];
 
 function AdminSidebar() {
