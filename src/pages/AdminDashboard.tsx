@@ -739,6 +739,144 @@ function AdminReports() {
   );
 }
 
+function AdminPages() {
+  const qc = useQueryClient();
+  const { data: pages, isLoading } = useQuery({
+    queryKey: ["pages"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("pages").select("*").order("updated_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+  const [open, setOpen] = useState(false);
+  const [editItem, setEditItem] = useState<any>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from("pages").delete().eq("id", deleteId);
+    if (error) toast.error(error.message);
+    else { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["pages"] }); }
+    setDeleteId(null);
+  };
+
+  const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const title = fd.get("title") as string;
+    let contentStr = fd.get("content") as string;
+    let contentJson: any = {};
+    try { contentJson = JSON.parse(contentStr); } catch { contentJson = { body: contentStr }; }
+    const { error } = await supabase.from("pages").insert({
+      title,
+      slug: title.toLowerCase().replace(/\s+/g, "-"),
+      content_json: contentJson,
+    });
+    if (error) toast.error(error.message);
+    else { toast.success("Added"); qc.invalidateQueries({ queryKey: ["pages"] }); setOpen(false); }
+  };
+
+  const openEdit = (p: any) => {
+    setEditItem(p);
+    setEditOpen(true);
+  };
+
+  const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const title = fd.get("title") as string;
+    let contentStr = fd.get("content") as string;
+    let contentJson: any = {};
+    try { contentJson = JSON.parse(contentStr); } catch { contentJson = { body: contentStr }; }
+    const { error } = await supabase.from("pages").update({
+      title,
+      slug: title.toLowerCase().replace(/\s+/g, "-"),
+      content_json: contentJson,
+    }).eq("id", editItem.id);
+    if (error) toast.error(error.message);
+    else { toast.success("Updated"); qc.invalidateQueries({ queryKey: ["pages"] }); setEditOpen(false); setEditItem(null); }
+  };
+
+  const formatContent = (item: any) => {
+    if (!item?.content_json) return "";
+    if (typeof item.content_json === "object" && item.content_json.body) return item.content_json.body;
+    return JSON.stringify(item.content_json, null, 2);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="font-display text-2xl font-bold text-foreground">Manage Pages</h2>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild><Button size="sm"><Plus size={16} className="mr-1" /> Add Page</Button></DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Add Page</DialogTitle></DialogHeader>
+            <form onSubmit={handleAdd} className="space-y-3">
+              <div><Label>Title</Label><Input name="title" required /></div>
+              <div><Label>Content (text or JSON)</Label><textarea name="content" rows={6} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder='Page content or {"body": "..."}' /></div>
+              <Button type="submit" className="w-full">Save</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditItem(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Page</DialogTitle></DialogHeader>
+          {editItem && (
+            <form onSubmit={handleEdit} className="space-y-3">
+              <div><Label>Title</Label><Input name="title" defaultValue={editItem.title} required /></div>
+              <div><Label>Content (text or JSON)</Label><textarea name="content" rows={6} defaultValue={formatContent(editItem)} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
+              <Button type="submit" className="w-full">Update</Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deleteId} onOpenChange={(v) => { if (!v) setDeleteId(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Confirm Delete</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Are you sure you want to delete this page? This action cannot be undone.</p>
+          <div className="flex gap-2 justify-end mt-4">
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {isLoading ? <Skeleton className="h-64" /> : (
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted">
+              <tr>
+                <th className="text-left p-4 font-semibold">Title</th>
+                <th className="text-left p-4 font-semibold">Slug</th>
+                <th className="text-left p-4 font-semibold">Updated</th>
+                <th className="text-right p-4 font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pages?.map((p) => (
+                <tr key={p.id} className="border-t border-border">
+                  <td className="p-4 font-medium text-foreground">{p.title}</td>
+                  <td className="p-4 text-muted-foreground">{p.slug}</td>
+                  <td className="p-4 text-muted-foreground">{new Date(p.updated_at).toLocaleDateString("id-ID")}</td>
+                  <td className="p-4 text-right flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil size={16} className="text-muted-foreground" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteId(p.id)}><Trash2 size={16} className="text-destructive" /></Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AdminRFQ() {
   const qc = useQueryClient();
   const { data: rfqs, isLoading } = useQuery({
