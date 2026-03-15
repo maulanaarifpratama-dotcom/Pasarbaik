@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sidebar";
 import { NavLink } from "@/components/NavLink";
 import { BarChart3, Package, Users, Building2, FileText, LogOut, Handshake, Plus, Trash2, ImageIcon, Pencil, Inbox, Eye } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
