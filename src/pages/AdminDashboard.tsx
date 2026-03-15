@@ -231,11 +231,14 @@ function AdminSuppliers() {
   const [editItem, setEditItem] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editLogoUrl, setEditLogoUrl] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("suppliers").delete().eq("id", id);
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from("suppliers").delete().eq("id", deleteId);
     if (error) toast.error(error.message);
     else { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["suppliers"] }); }
+    setDeleteId(null);
   };
 
   const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
