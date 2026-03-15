@@ -54,7 +54,7 @@ function AdminSidebar() {
           <SidebarGroupLabel>{!collapsed && "Admin Panel"}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {sidebarItems.map((item) => (
+              {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     type="button"
