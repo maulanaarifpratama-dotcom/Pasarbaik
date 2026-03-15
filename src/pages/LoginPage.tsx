@@ -36,7 +36,7 @@ function LoginPage() {
           const roleList = roles?.map(r => r.role) || [];
           if (roleList.includes("admin")) navigate("/admin");
           else if (roleList.includes("editor")) navigate("/admin");
-          else if (roleList.includes("partner") || roleList.includes("supplier")) navigate("/dashboard");
+          else if (roleList.includes("partner") || roleList.includes("supplier")) navigate("/partner");
           else navigate("/");
         } else {
           navigate("/");
