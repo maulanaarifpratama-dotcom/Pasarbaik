@@ -26,8 +26,8 @@ function Navbar() {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-colors ${isHome ? "bg-primary/80 backdrop-blur-md" : "bg-primary shadow-md"}`}>
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
-        <Link to="/" className="text-primary-foreground font-display text-xl font-bold tracking-tight">
-          PasarBaik
+        <Link to="/" className="flex items-center">
+          <img src={logoSrc} alt="PasarBaik" className="h-8 w-auto" />
         </Link>
 
         <div className="hidden lg:flex items-center gap-1">
