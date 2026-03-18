@@ -4,6 +4,7 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import logoSrc from "@/assets/logo-pasarbaik.png";
 
 const navItems = [
   { label: "Home", path: "/" },
