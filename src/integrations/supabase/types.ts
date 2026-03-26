@@ -326,8 +326,142 @@ export type Database = {
         }
         Relationships: []
       }
+      rfq_activity_log: {
+        Row: {
+          action: string
+          actor_type: string
+          actor_user_id: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          rfq_id: string
+        }
+        Insert: {
+          action: string
+          actor_type: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          rfq_id: string
+        }
+        Update: {
+          action?: string
+          actor_type?: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          rfq_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_activity_log_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfq_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rfq_messages: {
+        Row: {
+          attachment_url: string | null
+          created_at: string
+          id: string
+          message: string
+          rfq_id: string
+          sender_type: string
+          sender_user_id: string | null
+        }
+        Insert: {
+          attachment_url?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          rfq_id: string
+          sender_type: string
+          sender_user_id?: string | null
+        }
+        Update: {
+          attachment_url?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          rfq_id?: string
+          sender_type?: string
+          sender_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_messages_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfq_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rfq_quotes: {
+        Row: {
+          attachment_url: string | null
+          created_at: string
+          id: string
+          lead_time: string | null
+          moq: string | null
+          notes: string | null
+          price: string
+          rfq_id: string
+          status: string
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          created_at?: string
+          id?: string
+          lead_time?: string | null
+          moq?: string | null
+          notes?: string | null
+          price: string
+          rfq_id: string
+          status?: string
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_url?: string | null
+          created_at?: string
+          id?: string
+          lead_time?: string | null
+          moq?: string | null
+          notes?: string | null
+          price?: string
+          rfq_id?: string
+          status?: string
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_quotes_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfq_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_quotes_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rfq_requests: {
         Row: {
+          buyer_user_id: string | null
           category: string | null
           company: string
           contact_person: string
@@ -335,14 +469,19 @@ export type Database = {
           deadline: string | null
           email: string
           id: string
+          last_message_at: string | null
           location: string | null
           notes: string | null
           phone: string | null
           quantity: string | null
+          quotation_price: string | null
+          quotation_status: string | null
           status: string
+          supplier_id: string | null
           target_price: string | null
         }
         Insert: {
+          buyer_user_id?: string | null
           category?: string | null
           company: string
           contact_person: string
@@ -350,14 +489,19 @@ export type Database = {
           deadline?: string | null
           email: string
           id?: string
+          last_message_at?: string | null
           location?: string | null
           notes?: string | null
           phone?: string | null
           quantity?: string | null
+          quotation_price?: string | null
+          quotation_status?: string | null
           status?: string
+          supplier_id?: string | null
           target_price?: string | null
         }
         Update: {
+          buyer_user_id?: string | null
           category?: string | null
           company?: string
           contact_person?: string
@@ -365,14 +509,26 @@ export type Database = {
           deadline?: string | null
           email?: string
           id?: string
+          last_message_at?: string | null
           location?: string | null
           notes?: string | null
           phone?: string | null
           quantity?: string | null
+          quotation_price?: string | null
+          quotation_status?: string | null
           status?: string
+          supplier_id?: string | null
           target_price?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rfq_requests_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       suppliers: {
         Row: {
