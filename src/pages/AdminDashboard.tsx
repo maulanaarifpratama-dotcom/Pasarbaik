@@ -739,13 +739,13 @@ function AdminContent() {
     partners: "/admin/partners",
     pages: "/admin/pages",
     rfq: "/admin/rfq",
+    orders: "/admin/orders",
     reports: "/admin/reports",
     users: "/admin/users",
   };
 
-  // Editors can access content tabs but not user management
   const editorTabs: AdminTab[] = ["overview", "products", "suppliers", "programs", "pages", "reports"];
-  const adminTabs: AdminTab[] = ["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "reports", "users"];
+  const adminTabs: AdminTab[] = ["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "orders", "reports", "users"];
   const visibleTabs = isAdmin ? adminTabs : editorTabs;
 
   return (
