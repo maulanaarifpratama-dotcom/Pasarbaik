@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1142,6 +1143,195 @@ function AdminOrders() {
   );
 }
 
+function AdminOverview({ products, suppliers, programs, partners }: { products: any; suppliers: any; programs: any; partners: any }) {
+  const { data: orders = [] } = useQuery({
+    queryKey: ["admin-orders-analytics"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Parse numeric price from text
+  const parsePrice = (p: string) => {
+    const n = parseFloat(p.replace(/[^0-9.,]/g, "").replace(",", "."));
+    return isNaN(n) ? 0 : n;
+  };
+
+  const totalRevenue = orders.reduce((sum: number, o: any) => sum + parsePrice(o.agreed_price), 0);
+  const completedRevenue = orders.filter((o: any) => o.status === "completed").reduce((sum: number, o: any) => sum + parsePrice(o.agreed_price), 0);
+
+  // Status distribution
+  const statusCounts: Record<string, number> = {};
+  orders.forEach((o: any) => { statusCounts[o.status] = (statusCounts[o.status] || 0) + 1; });
+  const statusData = Object.entries(statusCounts).map(([name, value]) => ({ name, value }));
+
+  const STATUS_COLORS: Record<string, string> = {
+    pending: "hsl(var(--muted-foreground))",
+    confirmed: "hsl(var(--primary))",
+    processing: "hsl(40, 90%, 50%)",
+    shipped: "hsl(200, 80%, 50%)",
+    completed: "hsl(140, 70%, 40%)",
+    cancelled: "hsl(var(--destructive))",
+  };
+
+  // Monthly trend
+  const monthlyMap: Record<string, { month: string; orders: number; revenue: number }> = {};
+  orders.forEach((o: any) => {
+    const d = new Date(o.created_at);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    if (!monthlyMap[key]) monthlyMap[key] = { month: key, orders: 0, revenue: 0 };
+    monthlyMap[key].orders += 1;
+    monthlyMap[key].revenue += parsePrice(o.agreed_price);
+  });
+  const monthlyData = Object.values(monthlyMap).sort((a, b) => a.month.localeCompare(b.month));
+
+  // Recent orders
+  const recentOrders = [...orders].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
+
+  return (
+    <div>
+      <h2 className="font-display text-2xl font-bold text-foreground mb-6">Dashboard Analytics</h2>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+        <div className="bg-card rounded-xl border border-border p-5 text-center">
+          <Package className="mx-auto mb-2 text-primary" size={24} />
+          <div className="font-display text-2xl font-bold text-foreground">{products?.length || 0}</div>
+          <div className="text-xs text-muted-foreground">Products</div>
+        </div>
+        <div className="bg-card rounded-xl border border-border p-5 text-center">
+          <Users className="mx-auto mb-2 text-primary" size={24} />
+          <div className="font-display text-2xl font-bold text-foreground">{suppliers?.length || 0}</div>
+          <div className="text-xs text-muted-foreground">Suppliers</div>
+        </div>
+        <div className="bg-card rounded-xl border border-border p-5 text-center">
+          <Building2 className="mx-auto mb-2 text-primary" size={24} />
+          <div className="font-display text-2xl font-bold text-foreground">{programs?.length || 0}</div>
+          <div className="text-xs text-muted-foreground">Programs</div>
+        </div>
+        <div className="bg-card rounded-xl border border-border p-5 text-center">
+          <Handshake className="mx-auto mb-2 text-primary" size={24} />
+          <div className="font-display text-2xl font-bold text-foreground">{partners?.length || 0}</div>
+          <div className="text-xs text-muted-foreground">Partners</div>
+        </div>
+        <div className="bg-card rounded-xl border border-border p-5 text-center">
+          <ShoppingCart className="mx-auto mb-2 text-primary" size={24} />
+          <div className="font-display text-2xl font-bold text-foreground">{orders.length}</div>
+          <div className="text-xs text-muted-foreground">Total Orders</div>
+        </div>
+        <div className="bg-card rounded-xl border border-border p-5 text-center">
+          <DollarSign className="mx-auto mb-2 text-primary" size={24} />
+          <div className="font-display text-lg font-bold text-foreground">Rp {totalRevenue.toLocaleString("id-ID")}</div>
+          <div className="text-xs text-muted-foreground">Total Revenue</div>
+        </div>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Monthly Trend */}
+        <div className="bg-card rounded-xl border border-border p-6">
+          <h3 className="font-semibold text-foreground mb-4">Monthly Order Trend</h3>
+          {monthlyData.length > 0 ? (
+            <OrderMonthlyChart data={monthlyData} />
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">No order data yet</p>
+          )}
+        </div>
+
+        {/* Status Distribution */}
+        <div className="bg-card rounded-xl border border-border p-6">
+          <h3 className="font-semibold text-foreground mb-4">Orders by Status</h3>
+          {statusData.length > 0 ? (
+            <OrderStatusChart data={statusData} colors={STATUS_COLORS} />
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">No order data yet</p>
+          )}
+        </div>
+
+        {/* Revenue Trend */}
+        <div className="bg-card rounded-xl border border-border p-6">
+          <h3 className="font-semibold text-foreground mb-4">Monthly Revenue</h3>
+          {monthlyData.length > 0 ? (
+            <OrderRevenueChart data={monthlyData} />
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">No revenue data yet</p>
+          )}
+        </div>
+
+        {/* Recent Orders */}
+        <div className="bg-card rounded-xl border border-border p-6">
+          <h3 className="font-semibold text-foreground mb-4">Recent Orders</h3>
+          {recentOrders.length > 0 ? (
+            <div className="space-y-3">
+              {recentOrders.map((o: any) => (
+                <div key={o.id} className="flex items-center justify-between text-sm border-b border-border pb-2 last:border-0">
+                  <div>
+                    <div className="font-medium text-foreground">{o.buyer_company}</div>
+                    <div className="text-xs text-muted-foreground">{o.product_category || "—"} · {new Date(o.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short" })}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium text-foreground">{o.agreed_price}</div>
+                    <Badge variant={o.status === "completed" ? "default" : o.status === "cancelled" ? "destructive" : "secondary"} className="text-xs">{o.status}</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">No orders yet</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Chart sub-components using recharts
+function OrderMonthlyChart({ data }: { data: { month: string; orders: number; revenue: number }[] }) {
+  return (
+    <ResponsiveContainer width="100%" height={250}>
+      <BarChart data={data}>
+        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+        <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+        <YAxis tick={{ fontSize: 11 }} />
+        <Tooltip />
+        <Bar dataKey="orders" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+function OrderStatusChart({ data, colors }: { data: { name: string; value: number }[]; colors: Record<string, string> }) {
+  return (
+    <ResponsiveContainer width="100%" height={250}>
+      <PieChart>
+        <Pie data={data} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, value }: any) => `${name}: ${value}`}>
+          {data.map((entry) => (
+            <Cell key={entry.name} fill={colors[entry.name] || "hsl(var(--muted-foreground))"} />
+          ))}
+        </Pie>
+        <Tooltip />
+        <Legend />
+      </PieChart>
+    </ResponsiveContainer>
+  );
+}
+
+function OrderRevenueChart({ data }: { data: { month: string; orders: number; revenue: number }[] }) {
+  return (
+    <ResponsiveContainer width="100%" height={250}>
+      <AreaChart data={data}>
+        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+        <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
+        <Tooltip formatter={(v: number) => [`Rp ${v.toLocaleString("id-ID")}`, "Revenue"]} />
+        <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.2)" />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+}
+
 function AdminContent() {
   const { user } = useAuth();
   const { isAdmin } = useUserRole();
@@ -1189,33 +1379,7 @@ function AdminContent() {
           ))}
         </div>
 
-        {tab === "overview" && (
-          <div>
-            <h2 className="font-display text-2xl font-bold text-foreground mb-6">Admin Overview</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-card rounded-xl border border-border p-5 text-center">
-                <Package className="mx-auto mb-2 text-primary" size={24} />
-                <div className="font-display text-2xl font-bold text-foreground">{products?.length || 0}</div>
-                <div className="text-xs text-muted-foreground">Products</div>
-              </div>
-              <div className="bg-card rounded-xl border border-border p-5 text-center">
-                <Users className="mx-auto mb-2 text-primary" size={24} />
-                <div className="font-display text-2xl font-bold text-foreground">{suppliers?.length || 0}</div>
-                <div className="text-xs text-muted-foreground">Suppliers</div>
-              </div>
-              <div className="bg-card rounded-xl border border-border p-5 text-center">
-                <Building2 className="mx-auto mb-2 text-primary" size={24} />
-                <div className="font-display text-2xl font-bold text-foreground">{programs?.length || 0}</div>
-                <div className="text-xs text-muted-foreground">Programs</div>
-              </div>
-              <div className="bg-card rounded-xl border border-border p-5 text-center">
-                <Handshake className="mx-auto mb-2 text-primary" size={24} />
-                <div className="font-display text-2xl font-bold text-foreground">{partners?.length || 0}</div>
-                <div className="text-xs text-muted-foreground">Partners</div>
-              </div>
-            </div>
-          </div>
-        )}
+        {tab === "overview" && <AdminOverview products={products} suppliers={suppliers} programs={programs} partners={partners} />}
         {tab === "products" && <AdminProducts />}
         {tab === "suppliers" && <AdminSuppliers />}
         {tab === "programs" && <AdminPrograms />}
