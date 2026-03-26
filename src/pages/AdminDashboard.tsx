@@ -804,6 +804,46 @@ function AdminOrders() {
     setDeleteId(null);
   };
 
+  const exportCSV = () => {
+    const headers = ["Order ID", "Buyer Company", "Contact", "Email", "Category", "Quantity", "Agreed Price", "Lead Time", "Status", "Created At", "Notes"];
+    const rows = filtered.map((o: any) => [
+      o.id, o.buyer_company, o.buyer_contact, o.buyer_email, o.product_category || "", o.quantity || "",
+      o.agreed_price, o.lead_time || "", o.status,
+      new Date(o.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }),
+      o.notes || "",
+    ]);
+    const csv = [headers, ...rows].map(r => r.map((c: string) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV exported");
+  };
+
+  const exportPDF = async () => {
+    const { default: jsPDF } = await import("jspdf");
+    const { default: autoTable } = await import("jspdf-autotable");
+    const doc = new jsPDF({ orientation: "landscape" });
+    doc.setFontSize(16);
+    doc.text("Order Report", 14, 18);
+    doc.setFontSize(9);
+    doc.text(`Generated: ${new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}`, 14, 25);
+    autoTable(doc, {
+      startY: 30,
+      head: [["Order ID", "Buyer", "Category", "Qty", "Price", "Status", "Date"]],
+      body: filtered.map((o: any) => [
+        o.id.slice(0, 8), o.buyer_company, o.product_category || "—", o.quantity || "—",
+        o.agreed_price, o.status,
+        new Date(o.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }),
+      ]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [34, 87, 60] },
+    });
+    doc.save(`orders-${new Date().toISOString().slice(0, 10)}.pdf`);
+    toast.success("PDF exported");
+  };
+
   const filtered = statusFilter === "all" ? orders : orders.filter((o: any) => o.status === statusFilter);
   const statuses = ["all", "pending", "confirmed", "processing", "shipped", "completed", "cancelled"];
 
