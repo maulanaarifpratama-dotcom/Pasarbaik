@@ -44,6 +44,7 @@ function AppLayout() {
         <Route path="/impact" element={<ImpactPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/rfq" element={<RFQPage />} />
+        <Route path="/my-rfq" element={<BuyerRFQPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/dashboard/*" element={<DashboardPage />} />
         <Route path="/admin/*" element={<AdminDashboard />} />
