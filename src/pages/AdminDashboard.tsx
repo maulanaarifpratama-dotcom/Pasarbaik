@@ -33,6 +33,7 @@ const sidebarItems = [
   { title: "Partners", url: "/admin/partners", icon: Handshake },
   { title: "Pages", url: "/admin/pages", icon: FileEdit },
   { title: "RFQ", url: "/admin/rfq", icon: Inbox },
+  { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
   { title: "Reports", url: "/admin/reports", icon: FileText },
   { title: "Users", url: "/admin/users", icon: Users, adminOnly: true },
 ];
