@@ -21,6 +21,7 @@ import NotFound from "./pages/NotFound";
 import SupplierCenterLayout from "./pages/SupplierCenter/SupplierCenterLayout";
 import RFQInbox from "./pages/SupplierCenter/RFQInbox";
 import RFQDetail from "./pages/SupplierCenter/RFQDetail";
+import BuyerRFQPage from "./pages/BuyerRFQPage";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ function AppLayout() {
         <Route path="/impact" element={<ImpactPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/rfq" element={<RFQPage />} />
+        <Route path="/my-rfq" element={<BuyerRFQPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/dashboard/*" element={<DashboardPage />} />
         <Route path="/admin/*" element={<AdminDashboard />} />
