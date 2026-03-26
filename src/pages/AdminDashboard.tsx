@@ -14,7 +14,7 @@ import {
   SidebarProvider, SidebarTrigger, Sidebar, SidebarContent, SidebarGroup,
   SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar,
 } from "@/components/ui/sidebar";
-import { BarChart3, Package, Users, Building2, FileText, LogOut, Handshake, Plus, Trash2, ImageIcon, Pencil, Inbox, Eye, FileEdit } from "lucide-react";
+import { BarChart3, Package, Users, Building2, FileText, LogOut, Handshake, Plus, Trash2, ImageIcon, Pencil, Inbox, Eye, FileEdit, ShoppingCart } from "lucide-react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -33,6 +33,7 @@ const sidebarItems = [
   { title: "Partners", url: "/admin/partners", icon: Handshake },
   { title: "Pages", url: "/admin/pages", icon: FileEdit },
   { title: "RFQ", url: "/admin/rfq", icon: Inbox },
+  { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
   { title: "Reports", url: "/admin/reports", icon: FileText },
   { title: "Users", url: "/admin/users", icon: Users, adminOnly: true },
 ];
@@ -85,7 +86,7 @@ function AdminSidebar() {
   );
 }
 
-type AdminTab = "overview" | "products" | "suppliers" | "programs" | "partners" | "pages" | "rfq" | "reports" | "users";
+type AdminTab = "overview" | "products" | "suppliers" | "programs" | "partners" | "pages" | "rfq" | "orders" | "reports" | "users";
 
 // --- CRUD Components ---
 
@@ -717,6 +718,176 @@ function AdminRFQ() {
   );
 }
 
+function AdminOrders() {
+  const queryClient = useQueryClient();
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const { data: orders = [], isLoading } = useQuery({
+    queryKey: ["admin-orders"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    pending: { label: "Pending", variant: "secondary" },
+    confirmed: { label: "Confirmed", variant: "default" },
+    processing: { label: "Processing", variant: "outline" },
+    shipped: { label: "Shipped", variant: "outline" },
+    completed: { label: "Completed", variant: "default" },
+    cancelled: { label: "Cancelled", variant: "destructive" },
+  };
+
+  const handleStatusUpdate = async (orderId: string, newStatus: string) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: newStatus })
+      .eq("id", orderId);
+    if (error) toast.error(error.message);
+    else {
+      toast.success(`Order status updated to ${newStatus}`);
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from("orders").delete().eq("id", deleteId);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Order deleted");
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+    }
+    setDeleteId(null);
+  };
+
+  const filtered = statusFilter === "all" ? orders : orders.filter((o: any) => o.status === statusFilter);
+  const statuses = ["all", "pending", "confirmed", "processing", "shipped", "completed", "cancelled"];
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="font-display text-2xl font-bold text-foreground">Order Management</h2>
+        <Badge variant="outline" className="text-sm">{orders.length} total orders</Badge>
+      </div>
+
+      <div className="flex gap-2 mb-4 flex-wrap">
+        {statuses.map((s) => (
+          <button
+            key={s}
+            onClick={() => setStatusFilter(s)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${
+              statusFilter === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {s === "all" ? "All" : STATUS_CONFIG[s]?.label || s}
+            {s === "all"
+              ? ` (${orders.length})`
+              : ` (${orders.filter((o: any) => o.status === s).length})`}
+          </button>
+        ))}
+      </div>
+
+      {/* Delete Confirm */}
+      <Dialog open={!!deleteId} onOpenChange={(v) => { if (!v) setDeleteId(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Confirm Delete</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Are you sure you want to delete this order? This action cannot be undone.</p>
+          <div className="flex gap-2 justify-end mt-4">
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {isLoading ? <Skeleton className="h-64" /> : filtered.length === 0 ? (
+        <div className="text-center py-16 text-muted-foreground">
+          <ShoppingCart className="mx-auto mb-3 h-10 w-10 opacity-50" />
+          <p>No orders found</p>
+        </div>
+      ) : (
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted">
+              <tr>
+                <th className="text-left p-4 font-semibold">Order ID</th>
+                <th className="text-left p-4 font-semibold">Buyer</th>
+                <th className="text-left p-4 font-semibold">Category</th>
+                <th className="text-left p-4 font-semibold">Qty</th>
+                <th className="text-left p-4 font-semibold">Price</th>
+                <th className="text-left p-4 font-semibold">Status</th>
+                <th className="text-left p-4 font-semibold">Date</th>
+                <th className="text-right p-4 font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((order: any) => {
+                const cfg = STATUS_CONFIG[order.status] || { label: order.status, variant: "outline" as const };
+                return (
+                  <tr key={order.id} className="border-t border-border hover:bg-muted/30">
+                    <td className="p-4 font-mono text-xs text-foreground">{order.id.slice(0, 8)}...</td>
+                    <td className="p-4">
+                      <div className="font-medium text-foreground">{order.buyer_company}</div>
+                      <div className="text-xs text-muted-foreground">{order.buyer_contact} · {order.buyer_email}</div>
+                    </td>
+                    <td className="p-4 text-muted-foreground">{order.product_category || "—"}</td>
+                    <td className="p-4 text-muted-foreground">{order.quantity || "—"}</td>
+                    <td className="p-4 font-medium text-foreground">{order.agreed_price}</td>
+                    <td className="p-4">
+                      <Badge variant={cfg.variant}>{cfg.label}</Badge>
+                    </td>
+                    <td className="p-4 text-muted-foreground text-xs">
+                      {new Date(order.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                    </td>
+                    <td className="p-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {order.status === "pending" && (
+                          <Button variant="outline" size="sm" onClick={() => handleStatusUpdate(order.id, "confirmed")}>
+                            Confirm
+                          </Button>
+                        )}
+                        {order.status === "confirmed" && (
+                          <Button variant="outline" size="sm" onClick={() => handleStatusUpdate(order.id, "processing")}>
+                            Process
+                          </Button>
+                        )}
+                        {order.status === "processing" && (
+                          <Button variant="outline" size="sm" onClick={() => handleStatusUpdate(order.id, "shipped")}>
+                            Ship
+                          </Button>
+                        )}
+                        {order.status === "shipped" && (
+                          <Button variant="outline" size="sm" onClick={() => handleStatusUpdate(order.id, "completed")}>
+                            Complete
+                          </Button>
+                        )}
+                        {!["completed", "cancelled"].includes(order.status) && (
+                          <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleStatusUpdate(order.id, "cancelled")}>
+                            Cancel
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(order.id)}>
+                          <Trash2 size={16} className="text-destructive" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AdminContent() {
   const { user } = useAuth();
   const { isAdmin } = useUserRole();
@@ -728,7 +899,7 @@ function AdminContent() {
   const navigate = useNavigate();
 
   const pathSegment = location.pathname.replace("/admin", "").replace("/", "") || "overview";
-  const tab = (["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "reports", "users"].includes(pathSegment) ? pathSegment : "overview") as AdminTab;
+  const tab = (["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "orders", "reports", "users"].includes(pathSegment) ? pathSegment : "overview") as AdminTab;
 
   const tabRouteMap: Record<AdminTab, string> = {
     overview: "/admin",
@@ -738,13 +909,13 @@ function AdminContent() {
     partners: "/admin/partners",
     pages: "/admin/pages",
     rfq: "/admin/rfq",
+    orders: "/admin/orders",
     reports: "/admin/reports",
     users: "/admin/users",
   };
 
-  // Editors can access content tabs but not user management
   const editorTabs: AdminTab[] = ["overview", "products", "suppliers", "programs", "pages", "reports"];
-  const adminTabs: AdminTab[] = ["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "reports", "users"];
+  const adminTabs: AdminTab[] = ["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "orders", "reports", "users"];
   const visibleTabs = isAdmin ? adminTabs : editorTabs;
 
   return (
@@ -797,6 +968,7 @@ function AdminContent() {
         {tab === "partners" && <AdminPartners />}
         {tab === "pages" && <AdminPages />}
         {tab === "rfq" && <AdminRFQ />}
+        {tab === "orders" && <AdminOrders />}
         {tab === "reports" && <AdminReports />}
         {tab === "users" && isAdmin && <AdminUsers />}
       </main>
