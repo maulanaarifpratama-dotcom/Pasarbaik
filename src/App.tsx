@@ -22,6 +22,7 @@ import SupplierCenterLayout from "./pages/SupplierCenter/SupplierCenterLayout";
 import RFQInbox from "./pages/SupplierCenter/RFQInbox";
 import RFQDetail from "./pages/SupplierCenter/RFQDetail";
 import BuyerRFQPage from "./pages/BuyerRFQPage";
+import UnsubscribePage from "./pages/UnsubscribePage";
 
 const queryClient = new QueryClient();
 
