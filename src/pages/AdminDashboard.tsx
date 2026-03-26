@@ -1144,7 +1144,9 @@ function AdminOrders() {
 }
 
 function AdminOverview({ products, suppliers, programs, partners }: { products: any; suppliers: any; programs: any; partners: any }) {
-  const { data: orders = [] } = useQuery({
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+
+  const { data: allOrders = [] } = useQuery({
     queryKey: ["admin-orders-analytics"],
     queryFn: async () => {
       const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: true });
@@ -1152,6 +1154,20 @@ function AdminOverview({ products, suppliers, programs, partners }: { products: 
       return data || [];
     },
   });
+
+  // Filter by date range
+  const orders = useMemo(() => {
+    return allOrders.filter((o: any) => {
+      const d = new Date(o.created_at);
+      if (dateRange.from && d < dateRange.from) return false;
+      if (dateRange.to) {
+        const endOfDay = new Date(dateRange.to);
+        endOfDay.setHours(23, 59, 59, 999);
+        if (d > endOfDay) return false;
+      }
+      return true;
+    });
+  }, [allOrders, dateRange]);
 
   // Parse numeric price from text
   const parsePrice = (p: string) => {
@@ -1190,9 +1206,61 @@ function AdminOverview({ products, suppliers, programs, partners }: { products: 
   // Recent orders
   const recentOrders = [...orders].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
 
+  // Quick range presets
+  const setPreset = (days: number | null) => {
+    if (days === null) { setDateRange({}); return; }
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - days);
+    setDateRange({ from, to });
+  };
+
   return (
     <div>
-      <h2 className="font-display text-2xl font-bold text-foreground mb-6">Dashboard Analytics</h2>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <h2 className="font-display text-2xl font-bold text-foreground">Dashboard Analytics</h2>
+        <div className="flex items-center gap-2 flex-wrap">
+          {[
+            { label: "All", days: null },
+            { label: "7d", days: 7 },
+            { label: "30d", days: 30 },
+            { label: "90d", days: 90 },
+            { label: "1y", days: 365 },
+          ].map((p) => (
+            <button
+              key={p.label}
+              onClick={() => setPreset(p.days)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                (p.days === null && !dateRange.from) ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1 text-xs">
+                <CalendarIcon size={14} />
+                {dateRange.from
+                  ? `${format(dateRange.from, "dd MMM")}${dateRange.to ? ` – ${format(dateRange.to, "dd MMM yyyy")}` : ""}`
+                  : "Custom range"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="range"
+                selected={dateRange.from ? { from: dateRange.from, to: dateRange.to } : undefined}
+                onSelect={(range: any) => setDateRange({ from: range?.from, to: range?.to })}
+                numberOfMonths={2}
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+          {dateRange.from && (
+            <button onClick={() => setDateRange({})} className="text-xs text-muted-foreground hover:text-foreground underline">Clear</button>
+          )}
+        </div>
+      </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
