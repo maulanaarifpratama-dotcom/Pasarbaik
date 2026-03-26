@@ -86,7 +86,7 @@ function AdminSidebar() {
   );
 }
 
-type AdminTab = "overview" | "products" | "suppliers" | "programs" | "partners" | "pages" | "rfq" | "reports" | "users";
+type AdminTab = "overview" | "products" | "suppliers" | "programs" | "partners" | "pages" | "rfq" | "orders" | "reports" | "users";
 
 // --- CRUD Components ---
 
