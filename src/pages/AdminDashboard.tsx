@@ -1289,13 +1289,12 @@ function AdminOverview({ products, suppliers, programs, partners }: { products: 
 
 // Chart sub-components using recharts
 function OrderMonthlyChart({ data }: { data: { month: string; orders: number; revenue: number }[] }) {
-  const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = require("recharts");
   return (
     <ResponsiveContainer width="100%" height={250}>
       <BarChart data={data}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-        <XAxis dataKey="month" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
-        <YAxis tick={{ fontSize: 11 }} className="fill-muted-foreground" />
+        <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+        <YAxis tick={{ fontSize: 11 }} />
         <Tooltip />
         <Bar dataKey="orders" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
       </BarChart>
@@ -1304,7 +1303,6 @@ function OrderMonthlyChart({ data }: { data: { month: string; orders: number; re
 }
 
 function OrderStatusChart({ data, colors }: { data: { name: string; value: number }[]; colors: Record<string, string> }) {
-  const { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } = require("recharts");
   return (
     <ResponsiveContainer width="100%" height={250}>
       <PieChart>
@@ -1321,13 +1319,12 @@ function OrderStatusChart({ data, colors }: { data: { name: string; value: numbe
 }
 
 function OrderRevenueChart({ data }: { data: { month: string; orders: number; revenue: number }[] }) {
-  const { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = require("recharts");
   return (
     <ResponsiveContainer width="100%" height={250}>
       <AreaChart data={data}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-        <XAxis dataKey="month" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
-        <YAxis tick={{ fontSize: 11 }} className="fill-muted-foreground" tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
+        <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
         <Tooltip formatter={(v: number) => [`Rp ${v.toLocaleString("id-ID")}`, "Revenue"]} />
         <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.2)" />
       </AreaChart>
