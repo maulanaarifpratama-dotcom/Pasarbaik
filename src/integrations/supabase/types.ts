@@ -137,6 +137,82 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          agreed_price: string
+          buyer_company: string
+          buyer_contact: string
+          buyer_email: string
+          created_at: string
+          id: string
+          lead_time: string | null
+          notes: string | null
+          product_category: string | null
+          quantity: string | null
+          quote_id: string | null
+          rfq_id: string | null
+          status: string
+          supplier_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          agreed_price: string
+          buyer_company: string
+          buyer_contact: string
+          buyer_email: string
+          created_at?: string
+          id?: string
+          lead_time?: string | null
+          notes?: string | null
+          product_category?: string | null
+          quantity?: string | null
+          quote_id?: string | null
+          rfq_id?: string | null
+          status?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agreed_price?: string
+          buyer_company?: string
+          buyer_contact?: string
+          buyer_email?: string
+          created_at?: string
+          id?: string
+          lead_time?: string | null
+          notes?: string | null
+          product_category?: string | null
+          quantity?: string | null
+          quote_id?: string | null
+          rfq_id?: string | null
+          status?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "rfq_quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfq_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pages: {
         Row: {
           content_json: Json | null
@@ -461,6 +537,8 @@ export type Database = {
       }
       rfq_requests: {
         Row: {
+          buyer_access_token: string | null
+          buyer_session_id: string | null
           buyer_user_id: string | null
           category: string | null
           company: string
@@ -481,6 +559,8 @@ export type Database = {
           target_price: string | null
         }
         Insert: {
+          buyer_access_token?: string | null
+          buyer_session_id?: string | null
           buyer_user_id?: string | null
           category?: string | null
           company: string
@@ -501,6 +581,8 @@ export type Database = {
           target_price?: string | null
         }
         Update: {
+          buyer_access_token?: string | null
+          buyer_session_id?: string | null
           buyer_user_id?: string | null
           category?: string | null
           company?: string
