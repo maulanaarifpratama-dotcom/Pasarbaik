@@ -199,7 +199,9 @@ Deno.serve(async (req) => {
           .eq("id", rfqData.id);
 
         // Create order
+        const orderId = crypto.randomUUID();
         await supabase.from("orders").insert({
+          id: orderId,
           rfq_id: rfqData.id,
           quote_id: quote_id,
           supplier_id: quote.supplier_id,
@@ -220,6 +222,37 @@ Deno.serve(async (req) => {
           action: `Buyer accepted quote: ${quote.price}`,
           actor_type: "buyer",
         });
+
+        // Send email notification to admin
+        try {
+          // Get supplier name
+          const { data: supplierData } = await supabase
+            .from("suppliers")
+            .select("name")
+            .eq("id", quote.supplier_id)
+            .single();
+
+          const adminEmail = "arif@bisabaik.or.id";
+          await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "order-created-admin",
+              recipientEmail: adminEmail,
+              idempotencyKey: `order-admin-${orderId}`,
+              templateData: {
+                buyerCompany: rfqData.company,
+                buyerContact: rfqData.contact_person,
+                buyerEmail: rfqData.email,
+                supplierName: supplierData?.name || "Unknown",
+                category: rfqData.category,
+                quantity: rfqData.quantity,
+                agreedPrice: quote.price,
+                leadTime: quote.lead_time,
+              },
+            },
+          });
+        } catch (emailErr) {
+          console.error("Failed to send admin notification email:", emailErr);
+        }
 
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
