@@ -636,28 +636,28 @@ function AdminRFQ() {
   const { data: rfqs, isLoading } = useQuery({
     queryKey: ["rfq_requests"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("rfq_requests" as any).select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("rfq_requests").select("*").order("created_at", { ascending: false });
       if (error) throw error;
-      return data as any[];
+      return data;
     },
   });
-  const [viewItem, setViewItem] = useState<any>(null);
 
-  const statusColors: Record<string, string> = {
-    pending: "bg-yellow-100 text-yellow-800",
-    reviewed: "bg-blue-100 text-blue-800",
-    accepted: "bg-green-100 text-green-800",
-    rejected: "bg-red-100 text-red-800",
-  };
-
-  const handleStatus = async (id: string, status: string) => {
-    const { error } = await supabase.from("rfq_requests" as any).update({ status } as any).eq("id", id);
-    if (error) toast.error(error.message);
-    else { toast.success(`Status → ${status}`); qc.invalidateQueries({ queryKey: ["rfq_requests"] }); }
+  const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+    new: { label: "New", color: "bg-blue-100 text-blue-800" },
+    viewed: { label: "Viewed", color: "bg-slate-100 text-slate-800" },
+    replied: { label: "Replied", color: "bg-indigo-100 text-indigo-800" },
+    quoted: { label: "Quoted", color: "bg-amber-100 text-amber-800" },
+    negotiating: { label: "Negotiating", color: "bg-purple-100 text-purple-800" },
+    accepted: { label: "Accepted", color: "bg-green-100 text-green-800" },
+    rejected: { label: "Rejected", color: "bg-red-100 text-red-800" },
+    order_created: { label: "Order Created", color: "bg-emerald-100 text-emerald-800" },
+    archived: { label: "Archived", color: "bg-gray-100 text-gray-600" },
+    pending: { label: "Pending", color: "bg-yellow-100 text-yellow-800" },
+    reviewed: { label: "Reviewed", color: "bg-blue-100 text-blue-800" },
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("rfq_requests" as any).delete().eq("id", id);
+    const { error } = await supabase.from("rfq_requests").delete().eq("id", id);
     if (error) toast.error(error.message);
     else { toast.success("Deleted"); qc.invalidateQueries({ queryKey: ["rfq_requests"] }); }
   };
@@ -665,36 +665,6 @@ function AdminRFQ() {
   return (
     <div>
       <h2 className="font-display text-2xl font-bold text-foreground mb-6">RFQ Requests</h2>
-
-      {/* Detail Dialog */}
-      <Dialog open={!!viewItem} onOpenChange={(v) => { if (!v) setViewItem(null); }}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>RFQ Detail</DialogTitle></DialogHeader>
-          {viewItem && (
-            <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-2">
-                <div><span className="text-muted-foreground">Company:</span> <strong>{viewItem.company}</strong></div>
-                <div><span className="text-muted-foreground">Contact:</span> <strong>{viewItem.contact_person}</strong></div>
-                <div><span className="text-muted-foreground">Email:</span> <strong>{viewItem.email}</strong></div>
-                <div><span className="text-muted-foreground">Phone:</span> <strong>{viewItem.phone || "-"}</strong></div>
-                <div><span className="text-muted-foreground">Category:</span> <strong>{viewItem.category || "-"}</strong></div>
-                <div><span className="text-muted-foreground">Quantity:</span> <strong>{viewItem.quantity || "-"}</strong></div>
-                <div><span className="text-muted-foreground">Target Price:</span> <strong>{viewItem.target_price || "-"}</strong></div>
-                <div><span className="text-muted-foreground">Deadline:</span> <strong>{viewItem.deadline || "-"}</strong></div>
-                <div className="col-span-2"><span className="text-muted-foreground">Location:</span> <strong>{viewItem.location || "-"}</strong></div>
-              </div>
-              {viewItem.notes && (
-                <div><span className="text-muted-foreground">Notes:</span><p className="mt-1 bg-muted p-3 rounded-lg text-foreground">{viewItem.notes}</p></div>
-              )}
-              <div className="flex gap-2 pt-2">
-                <Button size="sm" variant="outline" onClick={() => handleStatus(viewItem.id, "reviewed")}>Mark Reviewed</Button>
-                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleStatus(viewItem.id, "accepted")}>Accept</Button>
-                <Button size="sm" variant="destructive" onClick={() => handleStatus(viewItem.id, "rejected")}>Reject</Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {isLoading ? <Skeleton className="h-64" /> : rfqs?.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center text-muted-foreground">
@@ -715,21 +685,30 @@ function AdminRFQ() {
               </tr>
             </thead>
             <tbody>
-              {rfqs?.map((r: any) => (
-                <tr key={r.id} className="border-t border-border">
-                  <td className="p-4 text-muted-foreground">{new Date(r.created_at).toLocaleDateString("id-ID")}</td>
-                  <td className="p-4 font-medium text-foreground">{r.company}</td>
-                  <td className="p-4 text-muted-foreground">{r.contact_person}</td>
-                  <td className="p-4 text-muted-foreground">{r.category || "-"}</td>
-                  <td className="p-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${statusColors[r.status] || "bg-muted text-muted-foreground"}`}>{r.status}</span>
-                  </td>
-                  <td className="p-4 text-right flex items-center justify-end gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => setViewItem(r)}><Eye size={16} className="text-muted-foreground" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(r.id)}><Trash2 size={16} className="text-destructive" /></Button>
-                  </td>
-                </tr>
-              ))}
+              {rfqs?.map((r) => {
+                const cfg = STATUS_CONFIG[r.status] || STATUS_CONFIG.new;
+                return (
+                  <tr key={r.id} className="border-t border-border">
+                    <td className="p-4 text-muted-foreground">{new Date(r.created_at).toLocaleDateString("id-ID")}</td>
+                    <td className="p-4 font-medium text-foreground">{r.company}</td>
+                    <td className="p-4 text-muted-foreground">{r.contact_person}</td>
+                    <td className="p-4 text-muted-foreground">{r.category || "-"}</td>
+                    <td className="p-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
+                    </td>
+                    <td className="p-4 text-right flex items-center justify-end gap-1">
+                      <Button variant="ghost" size="icon" asChild title="View Detail">
+                        <a href={`/supplier-center/rfq/${r.id}`}>
+                          <Eye size={16} className="text-muted-foreground" />
+                        </a>
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(r.id)} title="Delete">
+                        <Trash2 size={16} className="text-destructive" />
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
