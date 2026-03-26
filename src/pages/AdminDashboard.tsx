@@ -1042,7 +1042,18 @@ function AdminOrders() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-display text-2xl font-bold text-foreground">Order Management</h2>
-        <Badge variant="outline" className="text-sm">{orders.length} total orders</Badge>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm"><Download size={16} className="mr-1" /> Export</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportCSV}><FileText size={14} className="mr-2" /> Export CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportPDF}><FileText size={14} className="mr-2" /> Export PDF</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Badge variant="outline" className="text-sm">{orders.length} total orders</Badge>
+        </div>
       </div>
 
       <div className="flex gap-2 mb-4 flex-wrap">
