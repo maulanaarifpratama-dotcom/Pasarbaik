@@ -14,7 +14,10 @@ import {
   SidebarProvider, SidebarTrigger, Sidebar, SidebarContent, SidebarGroup,
   SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar,
 } from "@/components/ui/sidebar";
-import { BarChart3, Package, Users, Building2, FileText, LogOut, Handshake, Plus, Trash2, ImageIcon, Pencil, Inbox, Eye, FileEdit, ShoppingCart, ArrowLeft, MapPin, Mail, Phone, Clock, DollarSign, FileCheck } from "lucide-react";
+import { BarChart3, Package, Users, Building2, FileText, LogOut, Handshake, Plus, Trash2, ImageIcon, Pencil, Inbox, Eye, FileEdit, ShoppingCart, ArrowLeft, MapPin, Mail, Phone, Clock, DollarSign, FileCheck, Download } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -801,6 +804,46 @@ function AdminOrders() {
     setDeleteId(null);
   };
 
+  const exportCSV = () => {
+    const headers = ["Order ID", "Buyer Company", "Contact", "Email", "Category", "Quantity", "Agreed Price", "Lead Time", "Status", "Created At", "Notes"];
+    const rows = filtered.map((o: any) => [
+      o.id, o.buyer_company, o.buyer_contact, o.buyer_email, o.product_category || "", o.quantity || "",
+      o.agreed_price, o.lead_time || "", o.status,
+      new Date(o.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }),
+      o.notes || "",
+    ]);
+    const csv = [headers, ...rows].map(r => r.map((c: string) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV exported");
+  };
+
+  const exportPDF = async () => {
+    const { default: jsPDF } = await import("jspdf");
+    const { default: autoTable } = await import("jspdf-autotable");
+    const doc = new jsPDF({ orientation: "landscape" });
+    doc.setFontSize(16);
+    doc.text("Order Report", 14, 18);
+    doc.setFontSize(9);
+    doc.text(`Generated: ${new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}`, 14, 25);
+    autoTable(doc, {
+      startY: 30,
+      head: [["Order ID", "Buyer", "Category", "Qty", "Price", "Status", "Date"]],
+      body: filtered.map((o: any) => [
+        o.id.slice(0, 8), o.buyer_company, o.product_category || "—", o.quantity || "—",
+        o.agreed_price, o.status,
+        new Date(o.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }),
+      ]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [34, 87, 60] },
+    });
+    doc.save(`orders-${new Date().toISOString().slice(0, 10)}.pdf`);
+    toast.success("PDF exported");
+  };
+
   const filtered = statusFilter === "all" ? orders : orders.filter((o: any) => o.status === statusFilter);
   const statuses = ["all", "pending", "confirmed", "processing", "shipped", "completed", "cancelled"];
 
@@ -999,7 +1042,18 @@ function AdminOrders() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-display text-2xl font-bold text-foreground">Order Management</h2>
-        <Badge variant="outline" className="text-sm">{orders.length} total orders</Badge>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm"><Download size={16} className="mr-1" /> Export</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportCSV}><FileText size={14} className="mr-2" /> Export CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportPDF}><FileText size={14} className="mr-2" /> Export PDF</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Badge variant="outline" className="text-sm">{orders.length} total orders</Badge>
+        </div>
       </div>
 
       <div className="flex gap-2 mb-4 flex-wrap">
