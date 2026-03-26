@@ -798,6 +798,7 @@ function AdminContent() {
         {tab === "partners" && <AdminPartners />}
         {tab === "pages" && <AdminPages />}
         {tab === "rfq" && <AdminRFQ />}
+        {tab === "orders" && <AdminOrders />}
         {tab === "reports" && <AdminReports />}
         {tab === "users" && isAdmin && <AdminUsers />}
       </main>
