@@ -1189,33 +1189,7 @@ function AdminContent() {
           ))}
         </div>
 
-        {tab === "overview" && (
-          <div>
-            <h2 className="font-display text-2xl font-bold text-foreground mb-6">Admin Overview</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-card rounded-xl border border-border p-5 text-center">
-                <Package className="mx-auto mb-2 text-primary" size={24} />
-                <div className="font-display text-2xl font-bold text-foreground">{products?.length || 0}</div>
-                <div className="text-xs text-muted-foreground">Products</div>
-              </div>
-              <div className="bg-card rounded-xl border border-border p-5 text-center">
-                <Users className="mx-auto mb-2 text-primary" size={24} />
-                <div className="font-display text-2xl font-bold text-foreground">{suppliers?.length || 0}</div>
-                <div className="text-xs text-muted-foreground">Suppliers</div>
-              </div>
-              <div className="bg-card rounded-xl border border-border p-5 text-center">
-                <Building2 className="mx-auto mb-2 text-primary" size={24} />
-                <div className="font-display text-2xl font-bold text-foreground">{programs?.length || 0}</div>
-                <div className="text-xs text-muted-foreground">Programs</div>
-              </div>
-              <div className="bg-card rounded-xl border border-border p-5 text-center">
-                <Handshake className="mx-auto mb-2 text-primary" size={24} />
-                <div className="font-display text-2xl font-bold text-foreground">{partners?.length || 0}</div>
-                <div className="text-xs text-muted-foreground">Partners</div>
-              </div>
-            </div>
-          </div>
-        )}
+        {tab === "overview" && <AdminOverview products={products} suppliers={suppliers} programs={programs} partners={partners} />}
         {tab === "products" && <AdminProducts />}
         {tab === "suppliers" && <AdminSuppliers />}
         {tab === "programs" && <AdminPrograms />}
