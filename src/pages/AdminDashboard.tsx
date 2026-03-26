@@ -722,6 +722,7 @@ function AdminOrders() {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["admin-orders"],
@@ -733,6 +734,35 @@ function AdminOrders() {
       if (error) throw error;
       return data || [];
     },
+  });
+
+  // Fetch related data for selected order
+  const { data: orderDetail } = useQuery({
+    queryKey: ["admin-order-detail", selectedOrder?.id],
+    queryFn: async () => {
+      if (!selectedOrder) return null;
+      const [rfqRes, quoteRes, supplierRes, activityRes] = await Promise.all([
+        selectedOrder.rfq_id
+          ? supabase.from("rfq_requests").select("*").eq("id", selectedOrder.rfq_id).single()
+          : Promise.resolve({ data: null }),
+        selectedOrder.quote_id
+          ? supabase.from("rfq_quotes").select("*").eq("id", selectedOrder.quote_id).single()
+          : Promise.resolve({ data: null }),
+        selectedOrder.supplier_id
+          ? supabase.from("suppliers").select("*").eq("id", selectedOrder.supplier_id).single()
+          : Promise.resolve({ data: null }),
+        selectedOrder.rfq_id
+          ? supabase.from("rfq_activity_log" as any).select("*").eq("rfq_id", selectedOrder.rfq_id).order("created_at", { ascending: false }).limit(10)
+          : Promise.resolve({ data: [] }),
+      ]);
+      return {
+        rfq: rfqRes.data,
+        quote: quoteRes.data,
+        supplier: supplierRes.data,
+        activity: (activityRes.data || []) as any[],
+      };
+    },
+    enabled: !!selectedOrder,
   });
 
   const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -753,6 +783,9 @@ function AdminOrders() {
     else {
       toast.success(`Order status updated to ${newStatus}`);
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder({ ...selectedOrder, status: newStatus });
+      }
     }
   };
 
@@ -763,6 +796,7 @@ function AdminOrders() {
     else {
       toast.success("Order deleted");
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      if (selectedOrder?.id === deleteId) setSelectedOrder(null);
     }
     setDeleteId(null);
   };
@@ -770,6 +804,197 @@ function AdminOrders() {
   const filtered = statusFilter === "all" ? orders : orders.filter((o: any) => o.status === statusFilter);
   const statuses = ["all", "pending", "confirmed", "processing", "shipped", "completed", "cancelled"];
 
+  // Detail View
+  if (selectedOrder) {
+    const cfg = STATUS_CONFIG[selectedOrder.status] || { label: selectedOrder.status, variant: "outline" as const };
+    const rfq = orderDetail?.rfq;
+    const quote = orderDetail?.quote;
+    const supplier = orderDetail?.supplier;
+    const activity = orderDetail?.activity || [];
+
+    return (
+      <div>
+        <Button variant="ghost" size="sm" className="mb-4 gap-1" onClick={() => setSelectedOrder(null)}>
+          <ArrowLeft size={16} /> Back to Orders
+        </Button>
+
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="font-display text-2xl font-bold text-foreground">Order Detail</h2>
+            <p className="text-sm text-muted-foreground font-mono mt-1">{selectedOrder.id}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant={cfg.variant} className="text-sm">{cfg.label}</Badge>
+            {selectedOrder.status === "pending" && (
+              <Button size="sm" onClick={() => handleStatusUpdate(selectedOrder.id, "confirmed")}>Confirm</Button>
+            )}
+            {selectedOrder.status === "confirmed" && (
+              <Button size="sm" onClick={() => handleStatusUpdate(selectedOrder.id, "processing")}>Process</Button>
+            )}
+            {selectedOrder.status === "processing" && (
+              <Button size="sm" onClick={() => handleStatusUpdate(selectedOrder.id, "shipped")}>Ship</Button>
+            )}
+            {selectedOrder.status === "shipped" && (
+              <Button size="sm" onClick={() => handleStatusUpdate(selectedOrder.id, "completed")}>Complete</Button>
+            )}
+            {!["completed", "cancelled"].includes(selectedOrder.status) && (
+              <Button size="sm" variant="destructive" onClick={() => handleStatusUpdate(selectedOrder.id, "cancelled")}>Cancel</Button>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Buyer Info */}
+          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+            <h3 className="font-semibold text-foreground flex items-center gap-2"><Building2 size={18} /> Buyer Information</h3>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-start gap-2">
+                <Building2 size={14} className="mt-0.5 text-muted-foreground" />
+                <div><span className="text-muted-foreground">Company:</span> <span className="font-medium text-foreground">{selectedOrder.buyer_company}</span></div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Users size={14} className="mt-0.5 text-muted-foreground" />
+                <div><span className="text-muted-foreground">Contact:</span> <span className="font-medium text-foreground">{selectedOrder.buyer_contact}</span></div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Mail size={14} className="mt-0.5 text-muted-foreground" />
+                <div><span className="text-muted-foreground">Email:</span> <span className="font-medium text-foreground">{selectedOrder.buyer_email}</span></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Supplier Info */}
+          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+            <h3 className="font-semibold text-foreground flex items-center gap-2"><Package size={18} /> Supplier Information</h3>
+            {supplier ? (
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center gap-3 mb-2">
+                  {supplier.logo ? (
+                    <img src={supplier.logo} alt={supplier.name} className="w-10 h-10 rounded-lg object-cover border border-border" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center"><Building2 size={16} className="text-muted-foreground" /></div>
+                  )}
+                  <div>
+                    <div className="font-medium text-foreground">{supplier.name}</div>
+                    <div className="text-xs text-muted-foreground">{supplier.type}</div>
+                  </div>
+                </div>
+                {supplier.location && (
+                  <div className="flex items-start gap-2">
+                    <MapPin size={14} className="mt-0.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">{supplier.location}</span>
+                  </div>
+                )}
+                {supplier.contact && (
+                  <div className="flex items-start gap-2">
+                    <Phone size={14} className="mt-0.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">{supplier.contact}</span>
+                  </div>
+                )}
+                {supplier.description && (
+                  <p className="text-muted-foreground text-xs leading-relaxed mt-2">{supplier.description}</p>
+                )}
+              </div>
+            ) : (
+              <Skeleton className="h-20" />
+            )}
+          </div>
+
+          {/* Order Details */}
+          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+            <h3 className="font-semibold text-foreground flex items-center gap-2"><DollarSign size={18} /> Order Details</h3>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between"><span className="text-muted-foreground">Category</span><span className="font-medium text-foreground">{selectedOrder.product_category || "—"}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Quantity</span><span className="font-medium text-foreground">{selectedOrder.quantity || "—"}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Agreed Price</span><span className="font-medium text-foreground">{selectedOrder.agreed_price}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Lead Time</span><span className="font-medium text-foreground">{selectedOrder.lead_time || "—"}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Created</span><span className="text-foreground">{new Date(selectedOrder.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Updated</span><span className="text-foreground">{new Date(selectedOrder.updated_at).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span></div>
+              {selectedOrder.notes && (
+                <div className="pt-2 border-t border-border">
+                  <span className="text-muted-foreground block mb-1">Notes:</span>
+                  <p className="text-foreground">{selectedOrder.notes}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Quotation Detail */}
+          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+            <h3 className="font-semibold text-foreground flex items-center gap-2"><FileCheck size={18} /> Quotation Detail</h3>
+            {quote ? (
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Quote Price</span><span className="font-medium text-foreground">{(quote as any).price}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">MOQ</span><span className="text-foreground">{(quote as any).moq || "—"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Lead Time</span><span className="text-foreground">{(quote as any).lead_time || "—"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Status</span><Badge variant="default">{(quote as any).status}</Badge></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Submitted</span><span className="text-foreground">{new Date((quote as any).created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</span></div>
+                {(quote as any).notes && (
+                  <div className="pt-2 border-t border-border">
+                    <span className="text-muted-foreground block mb-1">Supplier Notes:</span>
+                    <p className="text-foreground">{(quote as any).notes}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No quotation linked</p>
+            )}
+          </div>
+
+          {/* Source RFQ */}
+          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+            <h3 className="font-semibold text-foreground flex items-center gap-2"><Inbox size={18} /> Source RFQ</h3>
+            {rfq ? (
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">RFQ ID</span><span className="font-mono text-xs text-foreground">{(rfq as any).id?.slice(0, 8)}...</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Status</span><Badge variant="outline">{(rfq as any).status}</Badge></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Category</span><span className="text-foreground">{(rfq as any).category || "—"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Quantity</span><span className="text-foreground">{(rfq as any).quantity || "—"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Target Price</span><span className="text-foreground">{(rfq as any).target_price || "—"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Location</span><span className="text-foreground">{(rfq as any).location || "—"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Submitted</span><span className="text-foreground">{new Date((rfq as any).created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</span></div>
+                {(rfq as any).notes && (
+                  <div className="pt-2 border-t border-border">
+                    <span className="text-muted-foreground block mb-1">Buyer Notes:</span>
+                    <p className="text-foreground">{(rfq as any).notes}</p>
+                  </div>
+                )}
+                <Button variant="outline" size="sm" className="mt-2 w-full" asChild>
+                  <a href={`/supplier-center/rfq/${(rfq as any).id}`}>View Full RFQ →</a>
+                </Button>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No RFQ linked</p>
+            )}
+          </div>
+
+          {/* Activity Timeline */}
+          <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+            <h3 className="font-semibold text-foreground flex items-center gap-2"><Clock size={18} /> Activity Timeline</h3>
+            {activity.length > 0 ? (
+              <div className="space-y-3">
+                {activity.map((a: any) => (
+                  <div key={a.id} className="flex gap-3 text-sm">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
+                    <div>
+                      <p className="text-foreground">{a.action}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {a.actor_type} · {new Date(a.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No activity recorded</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // List View
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -794,7 +1019,6 @@ function AdminOrders() {
         ))}
       </div>
 
-      {/* Delete Confirm */}
       <Dialog open={!!deleteId} onOpenChange={(v) => { if (!v) setDeleteId(null); }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Confirm Delete</DialogTitle></DialogHeader>
@@ -830,7 +1054,7 @@ function AdminOrders() {
               {filtered.map((order: any) => {
                 const cfg = STATUS_CONFIG[order.status] || { label: order.status, variant: "outline" as const };
                 return (
-                  <tr key={order.id} className="border-t border-border hover:bg-muted/30">
+                  <tr key={order.id} className="border-t border-border hover:bg-muted/30 cursor-pointer" onClick={() => setSelectedOrder(order)}>
                     <td className="p-4 font-mono text-xs text-foreground">{order.id.slice(0, 8)}...</td>
                     <td className="p-4">
                       <div className="font-medium text-foreground">{order.buyer_company}</div>
@@ -839,39 +1063,15 @@ function AdminOrders() {
                     <td className="p-4 text-muted-foreground">{order.product_category || "—"}</td>
                     <td className="p-4 text-muted-foreground">{order.quantity || "—"}</td>
                     <td className="p-4 font-medium text-foreground">{order.agreed_price}</td>
-                    <td className="p-4">
-                      <Badge variant={cfg.variant}>{cfg.label}</Badge>
-                    </td>
+                    <td className="p-4"><Badge variant={cfg.variant}>{cfg.label}</Badge></td>
                     <td className="p-4 text-muted-foreground text-xs">
                       {new Date(order.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
                     </td>
                     <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {order.status === "pending" && (
-                          <Button variant="outline" size="sm" onClick={() => handleStatusUpdate(order.id, "confirmed")}>
-                            Confirm
-                          </Button>
-                        )}
-                        {order.status === "confirmed" && (
-                          <Button variant="outline" size="sm" onClick={() => handleStatusUpdate(order.id, "processing")}>
-                            Process
-                          </Button>
-                        )}
-                        {order.status === "processing" && (
-                          <Button variant="outline" size="sm" onClick={() => handleStatusUpdate(order.id, "shipped")}>
-                            Ship
-                          </Button>
-                        )}
-                        {order.status === "shipped" && (
-                          <Button variant="outline" size="sm" onClick={() => handleStatusUpdate(order.id, "completed")}>
-                            Complete
-                          </Button>
-                        )}
-                        {!["completed", "cancelled"].includes(order.status) && (
-                          <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleStatusUpdate(order.id, "cancelled")}>
-                            Cancel
-                          </Button>
-                        )}
+                      <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" onClick={() => setSelectedOrder(order)} title="View Detail">
+                          <Eye size={16} className="text-muted-foreground" />
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => setDeleteId(order.id)}>
                           <Trash2 size={16} className="text-destructive" />
                         </Button>
