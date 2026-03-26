@@ -71,7 +71,7 @@ function SupplierSidebar() {
 
 export default function SupplierCenterLayout() {
   const { user, loading: authLoading } = useAuth();
-  const { roles, isLoading } = useUserRole();
+  const { roles, loading: isLoading } = useUserRole();
 
   if (authLoading || isLoading) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>;
