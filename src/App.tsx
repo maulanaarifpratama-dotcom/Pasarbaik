@@ -21,6 +21,7 @@ import NotFound from "./pages/NotFound";
 import SupplierCenterLayout from "./pages/SupplierCenter/SupplierCenterLayout";
 import RFQInbox from "./pages/SupplierCenter/RFQInbox";
 import RFQDetail from "./pages/SupplierCenter/RFQDetail";
+import BuyerRFQPage from "./pages/BuyerRFQPage";
 
 const queryClient = new QueryClient();
 
