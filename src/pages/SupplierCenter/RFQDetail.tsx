@@ -331,7 +331,9 @@ function QuotationTab({ rfqId, userId }: { rfqId: string; userId?: string }) {
       if (!form.price.trim() || !supplier?.id) {
         throw new Error("Price is required and you must be linked to a supplier");
       }
+      const quoteId = crypto.randomUUID();
       const { error } = await supabase.from("rfq_quotes" as any).insert({
+        id: quoteId,
         rfq_id: rfqId,
         supplier_id: supplier.id,
         price: form.price,
@@ -352,6 +354,45 @@ function QuotationTab({ rfqId, userId }: { rfqId: string; userId?: string }) {
         actor_type: "supplier",
         actor_user_id: userId,
       } as any);
+
+      // Send email notification to buyer
+      try {
+        const { data: rfq } = await supabase
+          .from("rfq_requests")
+          .select("email, contact_person, buyer_access_token")
+          .eq("id", rfqId)
+          .single();
+        const { data: sup } = await supabase
+          .from("suppliers")
+          .select("name")
+          .eq("id", supplier.id)
+          .single();
+
+        if (rfq?.email) {
+          const trackingUrl = rfq.buyer_access_token
+            ? `${window.location.origin}/my-rfq?token=${rfq.buyer_access_token}`
+            : undefined;
+
+          await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "new-quotation",
+              recipientEmail: rfq.email,
+              idempotencyKey: `new-quote-${quoteId}`,
+              templateData: {
+                buyerName: rfq.contact_person || undefined,
+                supplierName: sup?.name || undefined,
+                price: form.price,
+                moq: form.moq || undefined,
+                leadTime: form.lead_time || undefined,
+                notes: form.notes || undefined,
+                trackingUrl,
+              },
+            },
+          });
+        }
+      } catch (emailErr) {
+        console.error("Failed to send quotation email notification:", emailErr);
+      }
     },
     onSuccess: () => {
       setForm({ price: "", moq: "", lead_time: "", notes: "" });

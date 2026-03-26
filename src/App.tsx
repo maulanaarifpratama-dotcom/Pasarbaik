@@ -22,6 +22,7 @@ import SupplierCenterLayout from "./pages/SupplierCenter/SupplierCenterLayout";
 import RFQInbox from "./pages/SupplierCenter/RFQInbox";
 import RFQDetail from "./pages/SupplierCenter/RFQDetail";
 import BuyerRFQPage from "./pages/BuyerRFQPage";
+import UnsubscribePage from "./pages/UnsubscribePage";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ function AppLayout() {
           <Route path="rfq" element={<RFQInbox />} />
           <Route path="rfq/:id" element={<RFQDetail />} />
         </Route>
+        <Route path="/unsubscribe" element={<UnsubscribePage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!isDashboard && <Footer />}
