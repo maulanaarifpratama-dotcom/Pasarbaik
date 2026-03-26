@@ -18,12 +18,15 @@ import DashboardPage from "./pages/DashboardPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import PartnerDashboard from "./pages/PartnerDashboard";
 import NotFound from "./pages/NotFound";
+import SupplierCenterLayout from "./pages/SupplierCenter/SupplierCenterLayout";
+import RFQInbox from "./pages/SupplierCenter/RFQInbox";
+import RFQDetail from "./pages/SupplierCenter/RFQDetail";
 
 const queryClient = new QueryClient();
 
 function AppLayout() {
   const location = useLocation();
-  const isDashboard = location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin") || location.pathname.startsWith("/partner");
+  const isDashboard = location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin") || location.pathname.startsWith("/partner") || location.pathname.startsWith("/supplier-center");
 
   return (
     <>
@@ -44,6 +47,11 @@ function AppLayout() {
         <Route path="/dashboard/*" element={<DashboardPage />} />
         <Route path="/admin/*" element={<AdminDashboard />} />
         <Route path="/partner/*" element={<PartnerDashboard />} />
+        <Route path="/supplier-center" element={<SupplierCenterLayout />}>
+          <Route index element={<RFQInbox />} />
+          <Route path="rfq" element={<RFQInbox />} />
+          <Route path="rfq/:id" element={<RFQDetail />} />
+        </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!isDashboard && <Footer />}
