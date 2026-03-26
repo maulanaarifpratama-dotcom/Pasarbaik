@@ -55,6 +55,7 @@ function AppLayout() {
           <Route path="rfq" element={<RFQInbox />} />
           <Route path="rfq/:id" element={<RFQDetail />} />
         </Route>
+        <Route path="/unsubscribe" element={<UnsubscribePage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!isDashboard && <Footer />}
