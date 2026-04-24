@@ -11,9 +11,10 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Trash2, Shield, ShieldCheck, UserCheck, User } from "lucide-react";
+import { Plus, Trash2, Shield, ShieldCheck, UserCheck, User, Search } from "lucide-react";
 import type { AppRole } from "@/hooks/useUserRole";
 import { RolePermissionsMatrix } from "./RolePermissionsMatrix";
+import { Input } from "@/components/ui/input";
 
 const ALL_ROLES: AppRole[] = ["admin", "editor", "partner", "supplier", "buyer", "user"];
 
@@ -32,7 +33,16 @@ interface ProfileWithRoles {
   name: string | null;
   email: string | null;
   created_at: string;
+  verified: boolean;
+  last_sign_in_at: string | null;
   roles: AppRole[];
+}
+
+interface AuthUserSummary {
+  id: string;
+  email: string | null;
+  email_confirmed_at: string | null;
+  last_sign_in_at: string | null;
 }
 
 export function AdminUsers() {
@@ -40,6 +50,9 @@ export function AdminUsers() {
   const [addDialogUser, setAddDialogUser] = useState<ProfileWithRoles | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [deleteConfirm, setDeleteConfirm] = useState<{ userId: string; role: AppRole } | null>(null);
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [verificationFilter, setVerificationFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["admin-users-with-roles"],
@@ -55,6 +68,12 @@ export function AdminUsers() {
         .select("user_id, role");
       if (rErr) throw rErr;
 
+      const { data: authSummary, error: authErr } = await supabase.functions.invoke("admin-users");
+      if (authErr) throw authErr;
+
+      const authMap = new Map<string, AuthUserSummary>();
+      (authSummary?.users || []).forEach((u: AuthUserSummary) => authMap.set(u.id, u));
+
       const roleMap = new Map<string, AppRole[]>();
       allRoles?.forEach((r) => {
         const existing = roleMap.get(r.user_id) || [];
@@ -64,9 +83,23 @@ export function AdminUsers() {
 
       return (profiles || []).map((p) => ({
         ...p,
+        email: p.email || authMap.get(p.user_id)?.email || null,
+        verified: Boolean(authMap.get(p.user_id)?.email_confirmed_at),
+        last_sign_in_at: authMap.get(p.user_id)?.last_sign_in_at || null,
         roles: roleMap.get(p.user_id) || [],
       })) as ProfileWithRoles[];
     },
+  });
+
+  const filteredUsers = (users || []).filter((u) => {
+    const query = search.trim().toLowerCase();
+    const matchesSearch = !query || `${u.name || ""} ${u.email || ""}`.toLowerCase().includes(query);
+    const matchesRole = roleFilter === "all" || u.roles.includes(roleFilter as AppRole);
+    const matchesVerification =
+      verificationFilter === "all" ||
+      (verificationFilter === "verified" ? u.verified : !u.verified);
+
+    return matchesSearch && matchesRole && matchesVerification;
   });
 
   const handleAddRole = async () => {
@@ -99,6 +132,25 @@ export function AdminUsers() {
       qc.invalidateQueries({ queryKey: ["admin-users-with-roles"] });
     }
     setDeleteConfirm(null);
+  };
+
+  const handleQuickRoleChange = async (user: ProfileWithRoles, nextRole: AppRole) => {
+    const { error: deleteError } = await supabase.from("user_roles").delete().eq("user_id", user.user_id);
+    if (deleteError) {
+      toast.error(deleteError.message);
+      return;
+    }
+
+    const { error: insertError } = await supabase.from("user_roles").insert({
+      user_id: user.user_id,
+      role: nextRole,
+    });
+
+    if (insertError) toast.error(insertError.message);
+    else {
+      toast.success(`Role diubah ke "${nextRole}"`);
+      qc.invalidateQueries({ queryKey: ["admin-users-with-roles"] });
+    }
   };
 
   return (
