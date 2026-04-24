@@ -11,9 +11,10 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Trash2, Shield, ShieldCheck, UserCheck, User } from "lucide-react";
+import { Plus, Trash2, Shield, ShieldCheck, UserCheck, User, Search } from "lucide-react";
 import type { AppRole } from "@/hooks/useUserRole";
 import { RolePermissionsMatrix } from "./RolePermissionsMatrix";
+import { Input } from "@/components/ui/input";
 
 const ALL_ROLES: AppRole[] = ["admin", "editor", "partner", "supplier", "buyer", "user"];
 
@@ -32,7 +33,16 @@ interface ProfileWithRoles {
   name: string | null;
   email: string | null;
   created_at: string;
+  verified: boolean;
+  last_sign_in_at: string | null;
   roles: AppRole[];
+}
+
+interface AuthUserSummary {
+  id: string;
+  email: string | null;
+  email_confirmed_at: string | null;
+  last_sign_in_at: string | null;
 }
 
 export function AdminUsers() {
@@ -40,6 +50,9 @@ export function AdminUsers() {
   const [addDialogUser, setAddDialogUser] = useState<ProfileWithRoles | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [deleteConfirm, setDeleteConfirm] = useState<{ userId: string; role: AppRole } | null>(null);
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [verificationFilter, setVerificationFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["admin-users-with-roles"],
@@ -55,6 +68,12 @@ export function AdminUsers() {
         .select("user_id, role");
       if (rErr) throw rErr;
 
+      const { data: authSummary, error: authErr } = await supabase.functions.invoke("admin-users");
+      if (authErr) throw authErr;
+
+      const authMap = new Map<string, AuthUserSummary>();
+      (authSummary?.users || []).forEach((u: AuthUserSummary) => authMap.set(u.id, u));
+
       const roleMap = new Map<string, AppRole[]>();
       allRoles?.forEach((r) => {
         const existing = roleMap.get(r.user_id) || [];
@@ -64,9 +83,23 @@ export function AdminUsers() {
 
       return (profiles || []).map((p) => ({
         ...p,
+        email: p.email || authMap.get(p.user_id)?.email || null,
+        verified: Boolean(authMap.get(p.user_id)?.email_confirmed_at),
+        last_sign_in_at: authMap.get(p.user_id)?.last_sign_in_at || null,
         roles: roleMap.get(p.user_id) || [],
       })) as ProfileWithRoles[];
     },
+  });
+
+  const filteredUsers = (users || []).filter((u) => {
+    const query = search.trim().toLowerCase();
+    const matchesSearch = !query || `${u.name || ""} ${u.email || ""}`.toLowerCase().includes(query);
+    const matchesRole = roleFilter === "all" || u.roles.includes(roleFilter as AppRole);
+    const matchesVerification =
+      verificationFilter === "all" ||
+      (verificationFilter === "verified" ? u.verified : !u.verified);
+
+    return matchesSearch && matchesRole && matchesVerification;
   });
 
   const handleAddRole = async () => {
@@ -101,6 +134,25 @@ export function AdminUsers() {
     setDeleteConfirm(null);
   };
 
+  const handleQuickRoleChange = async (user: ProfileWithRoles, nextRole: AppRole) => {
+    const { error: deleteError } = await supabase.from("user_roles").delete().eq("user_id", user.user_id);
+    if (deleteError) {
+      toast.error(deleteError.message);
+      return;
+    }
+
+    const { error: insertError } = await supabase.from("user_roles").insert({
+      user_id: user.user_id,
+      role: nextRole,
+    });
+
+    if (insertError) toast.error(insertError.message);
+    else {
+      toast.success(`Role diubah ke "${nextRole}"`);
+      qc.invalidateQueries({ queryKey: ["admin-users-with-roles"] });
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -108,6 +160,35 @@ export function AdminUsers() {
           <h2 className="font-display text-2xl font-bold text-foreground">Manajemen Role & Izin Pengguna</h2>
           <p className="text-sm text-muted-foreground">Atur akses admin, editor, partner, supplier, buyer, dan user.</p>
         </div>
+      </div>
+
+      <div className="mb-4 grid gap-3 md:grid-cols-[1fr_180px_220px]">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cari nama atau email"
+            className="pl-9"
+          />
+        </div>
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger><SelectValue placeholder="Filter role" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua role</SelectItem>
+            {ALL_ROLES.map((role) => (
+              <SelectItem key={role} value={role}>{roleMeta[role]?.label || role}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={verificationFilter} onValueChange={setVerificationFilter}>
+          <SelectTrigger><SelectValue placeholder="Status verifikasi" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua status</SelectItem>
+            <SelectItem value="verified">Terverifikasi</SelectItem>
+            <SelectItem value="unverified">Belum verifikasi</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {isLoading ? (
@@ -119,16 +200,30 @@ export function AdminUsers() {
               <tr>
                 <th className="text-left p-4 font-semibold">User</th>
                 <th className="text-left p-4 font-semibold">Email</th>
+                <th className="text-left p-4 font-semibold">Verifikasi</th>
                 <th className="text-left p-4 font-semibold">Joined</th>
                 <th className="text-left p-4 font-semibold">Roles</th>
+                <th className="text-left p-4 font-semibold">Ubah Cepat</th>
                 <th className="text-right p-4 font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {users?.map((u) => (
+              {filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-sm text-muted-foreground">
+                    Tidak ada pengguna yang cocok dengan filter.
+                  </td>
+                </tr>
+              )}
+              {filteredUsers.map((u) => (
                 <tr key={u.id} className="border-t border-border">
                   <td className="p-4 font-medium text-foreground">{u.name || "—"}</td>
                   <td className="p-4 text-muted-foreground">{u.email || "—"}</td>
+                  <td className="p-4">
+                    <Badge variant="outline" className={u.verified ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground border-border"}>
+                      {u.verified ? "Terverifikasi" : "Belum verifikasi"}
+                    </Badge>
+                  </td>
                   <td className="p-4 text-muted-foreground text-xs">
                     {new Date(u.created_at).toLocaleDateString("id-ID")}
                   </td>
@@ -152,6 +247,16 @@ export function AdminUsers() {
                         );
                       })}
                     </div>
+                  </td>
+                  <td className="p-4 min-w-40">
+                    <Select value={u.roles[0] || ""} onValueChange={(value) => handleQuickRoleChange(u, value as AppRole)}>
+                      <SelectTrigger className="h-8"><SelectValue placeholder="Pilih role" /></SelectTrigger>
+                      <SelectContent>
+                        {ALL_ROLES.map((role) => (
+                          <SelectItem key={role} value={role}>{roleMeta[role]?.label || role}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </td>
                   <td className="p-4 text-right">
                     <Button

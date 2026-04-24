@@ -3,6 +3,8 @@ project_id = "kcyutiylqcevdqtbcpeh"
 [functions]
   [functions.auth-email-hook]
     verify_jwt = false
+  [functions.admin-users]
+    verify_jwt = true
   [functions.handle-email-suppression]
     verify_jwt = false
   [functions.handle-email-unsubscribe]
