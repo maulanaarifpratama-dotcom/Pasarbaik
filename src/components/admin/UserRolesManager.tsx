@@ -162,6 +162,35 @@ export function AdminUsers() {
         </div>
       </div>
 
+      <div className="mb-4 grid gap-3 md:grid-cols-[1fr_180px_220px]">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cari nama atau email"
+            className="pl-9"
+          />
+        </div>
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger><SelectValue placeholder="Filter role" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua role</SelectItem>
+            {ALL_ROLES.map((role) => (
+              <SelectItem key={role} value={role}>{roleMeta[role]?.label || role}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={verificationFilter} onValueChange={setVerificationFilter}>
+          <SelectTrigger><SelectValue placeholder="Status verifikasi" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua status</SelectItem>
+            <SelectItem value="verified">Terverifikasi</SelectItem>
+            <SelectItem value="unverified">Belum verifikasi</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {isLoading ? (
         <Skeleton className="h-64" />
       ) : (
@@ -171,16 +200,30 @@ export function AdminUsers() {
               <tr>
                 <th className="text-left p-4 font-semibold">User</th>
                 <th className="text-left p-4 font-semibold">Email</th>
+                <th className="text-left p-4 font-semibold">Verifikasi</th>
                 <th className="text-left p-4 font-semibold">Joined</th>
                 <th className="text-left p-4 font-semibold">Roles</th>
+                <th className="text-left p-4 font-semibold">Ubah Cepat</th>
                 <th className="text-right p-4 font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {users?.map((u) => (
+              {filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-sm text-muted-foreground">
+                    Tidak ada pengguna yang cocok dengan filter.
+                  </td>
+                </tr>
+              )}
+              {filteredUsers.map((u) => (
                 <tr key={u.id} className="border-t border-border">
                   <td className="p-4 font-medium text-foreground">{u.name || "—"}</td>
                   <td className="p-4 text-muted-foreground">{u.email || "—"}</td>
+                  <td className="p-4">
+                    <Badge variant="outline" className={u.verified ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground border-border"}>
+                      {u.verified ? "Terverifikasi" : "Belum verifikasi"}
+                    </Badge>
+                  </td>
                   <td className="p-4 text-muted-foreground text-xs">
                     {new Date(u.created_at).toLocaleDateString("id-ID")}
                   </td>
@@ -204,6 +247,16 @@ export function AdminUsers() {
                         );
                       })}
                     </div>
+                  </td>
+                  <td className="p-4 min-w-40">
+                    <Select value={u.roles[0] || ""} onValueChange={(value) => handleQuickRoleChange(u, value as AppRole)}>
+                      <SelectTrigger className="h-8"><SelectValue placeholder="Pilih role" /></SelectTrigger>
+                      <SelectContent>
+                        {ALL_ROLES.map((role) => (
+                          <SelectItem key={role} value={role}>{roleMeta[role]?.label || role}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </td>
                   <td className="p-4 text-right">
                     <Button
