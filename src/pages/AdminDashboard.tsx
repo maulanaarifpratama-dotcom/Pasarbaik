@@ -19,7 +19,7 @@ import {
   SidebarProvider, SidebarTrigger, Sidebar, SidebarContent, SidebarGroup,
   SidebarGroupLabel, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar,
 } from "@/components/ui/sidebar";
-import { BarChart3, Package, Users, Building2, FileText, LogOut, Handshake, Plus, Trash2, ImageIcon, Pencil, Inbox, Eye, FileEdit, ShoppingCart, ArrowLeft, MapPin, Mail, Phone, Clock, DollarSign, FileCheck, Download } from "lucide-react";
+import { BarChart3, Package, Users, Building2, FileText, LogOut, Handshake, Plus, Trash2, ImageIcon, Pencil, Inbox, Eye, FileEdit, ShoppingCart, ArrowLeft, MapPin, Mail, Phone, Clock, DollarSign, FileCheck, Download, ServerCog } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -32,6 +32,7 @@ import { RichTextEditor } from "@/components/RichTextEditor";
 import { AdminProducts } from "@/components/admin/ProductEditor";
 import { AdminSuppliers } from "@/components/admin/SupplierEditor";
 import { AdminUsers } from "@/components/admin/UserRolesManager";
+import { SupabaseIntegrationStatus } from "@/components/admin/SupabaseIntegrationStatus";
 
 const sidebarItems = [
   { title: "Dashboard", url: "/admin", icon: BarChart3 },
@@ -44,6 +45,7 @@ const sidebarItems = [
   { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
   { title: "Reports", url: "/admin/reports", icon: FileText },
   { title: "Users", url: "/admin/users", icon: Users, adminOnly: true },
+  { title: "Supabase", url: "/admin/supabase", icon: ServerCog, adminOnly: true },
 ];
 
 function AdminSidebar() {
@@ -94,7 +96,7 @@ function AdminSidebar() {
   );
 }
 
-type AdminTab = "overview" | "products" | "suppliers" | "programs" | "partners" | "pages" | "rfq" | "orders" | "reports" | "users";
+type AdminTab = "overview" | "products" | "suppliers" | "programs" | "partners" | "pages" | "rfq" | "orders" | "reports" | "users" | "supabase";
 
 // --- CRUD Components ---
 
@@ -1415,7 +1417,7 @@ function AdminContent() {
   const navigate = useNavigate();
 
   const pathSegment = location.pathname.replace("/admin", "").replace("/", "") || "overview";
-  const tab = (["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "orders", "reports", "users"].includes(pathSegment) ? pathSegment : "overview") as AdminTab;
+  const tab = (["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "orders", "reports", "users", "supabase"].includes(pathSegment) ? pathSegment : "overview") as AdminTab;
 
   const tabRouteMap: Record<AdminTab, string> = {
     overview: "/admin",
@@ -1428,10 +1430,11 @@ function AdminContent() {
     orders: "/admin/orders",
     reports: "/admin/reports",
     users: "/admin/users",
+    supabase: "/admin/supabase",
   };
 
   const editorTabs: AdminTab[] = ["overview", "products", "suppliers", "programs", "pages", "reports"];
-  const adminTabs: AdminTab[] = ["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "orders", "reports", "users"];
+  const adminTabs: AdminTab[] = ["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "orders", "reports", "users", "supabase"];
   const visibleTabs = isAdmin ? adminTabs : editorTabs;
 
   return (
@@ -1461,6 +1464,7 @@ function AdminContent() {
         {tab === "orders" && <AdminOrders />}
         {tab === "reports" && <AdminReports />}
         {tab === "users" && isAdmin && <AdminUsers />}
+        {tab === "supabase" && isAdmin && <SupabaseIntegrationStatus />}
       </main>
     </div>
   );
