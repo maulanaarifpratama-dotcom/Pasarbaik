@@ -1417,7 +1417,7 @@ function AdminContent() {
   const navigate = useNavigate();
 
   const pathSegment = location.pathname.replace("/admin", "").replace("/", "") || "overview";
-  const tab = (["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "orders", "reports", "users"].includes(pathSegment) ? pathSegment : "overview") as AdminTab;
+  const tab = (["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "orders", "reports", "users", "supabase"].includes(pathSegment) ? pathSegment : "overview") as AdminTab;
 
   const tabRouteMap: Record<AdminTab, string> = {
     overview: "/admin",
@@ -1430,10 +1430,11 @@ function AdminContent() {
     orders: "/admin/orders",
     reports: "/admin/reports",
     users: "/admin/users",
+    supabase: "/admin/supabase",
   };
 
   const editorTabs: AdminTab[] = ["overview", "products", "suppliers", "programs", "pages", "reports"];
-  const adminTabs: AdminTab[] = ["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "orders", "reports", "users"];
+  const adminTabs: AdminTab[] = ["overview", "products", "suppliers", "programs", "partners", "pages", "rfq", "orders", "reports", "users", "supabase"];
   const visibleTabs = isAdmin ? adminTabs : editorTabs;
 
   return (
@@ -1463,6 +1464,7 @@ function AdminContent() {
         {tab === "orders" && <AdminOrders />}
         {tab === "reports" && <AdminReports />}
         {tab === "users" && isAdmin && <AdminUsers />}
+        {tab === "supabase" && isAdmin && <SupabaseIntegrationStatus />}
       </main>
     </div>
   );
