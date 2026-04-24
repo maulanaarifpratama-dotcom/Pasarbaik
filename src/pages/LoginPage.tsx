@@ -88,16 +88,20 @@ function LoginPage() {
 
   const redirectByRole = async (userId: string) => {
     try {
-      // Fetch role dari table profiles (primary source)
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
+      // Fetch role dari tabel user_roles (primary source)
+      const { data: userRoles, error: rolesError } = await supabase
+        .from("user_roles")
         .select("role")
-        .eq("id", userId)
-        .single();
+        .eq("user_id", userId);
 
-      if (profileError) throw profileError;
+      if (rolesError) throw rolesError;
 
-      const role = profile?.role || "buyer";
+      const roles = userRoles?.map((item) => item.role) || [];
+      const role = roles.includes("admin")
+        ? "admin"
+        : roles.includes("partner") || roles.includes("supplier")
+        ? "supplier"
+        : "buyer";
 
       if (role === "admin") navigate("/admin");
       else if (role === "supplier") navigate("/supplier");

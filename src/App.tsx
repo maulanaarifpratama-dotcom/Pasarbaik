@@ -23,6 +23,7 @@ import RFQInbox from "./pages/SupplierCenter/RFQInbox";
 import RFQDetail from "./pages/SupplierCenter/RFQDetail";
 import BuyerRFQPage from "./pages/BuyerRFQPage";
 import UnsubscribePage from "./pages/UnsubscribePage";
+import AuthCallback from "./pages/AuthCallback";
 
 const queryClient = new QueryClient();
 

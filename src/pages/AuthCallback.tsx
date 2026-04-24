@@ -27,36 +27,41 @@ export default function AuthCallback() {
 
       const userId = data.session.user.id;
 
-      // Fetch role dari profiles table
+        // Fetch role dari tabel user_roles dan nama dari profiles
       try {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("role, full_name")
-          .eq("id", userId)
-          .single();
+          const [{ data: userRoles, error: rolesError }, { data: profile }] = await Promise.all([
+            supabase.from("user_roles").select("role").eq("user_id", userId),
+            supabase.from("profiles").select("name").eq("user_id", userId).maybeSingle(),
+          ]);
 
-        if (profileError) {
-          // Profile belum ada — kemungkinan trigger handle_new_user belum jalan
+          if (rolesError) {
+            // Role belum ada — kemungkinan trigger handle_auto_admin belum jalan
           // Atau ada race condition. Retry sekali lagi.
           await new Promise((resolve) => setTimeout(resolve, 500));
           
-          const { data: retryProfile } = await supabase
-            .from("profiles")
+            const { data: retryRoles } = await supabase
+              .from("user_roles")
             .select("role")
-            .eq("id", userId)
-            .single();
+              .eq("user_id", userId);
 
-          const role = retryProfile?.role || "buyer";
+            const retryRoleList = retryRoles?.map((item) => item.role) || [];
+            const role = getPrimaryRole(retryRoleList);
           redirectByRole(role);
           return;
         }
 
-        toast.success(`Selamat datang${profile.full_name ? `, ${profile.full_name}` : ""}!`);
-        redirectByRole(profile.role || "buyer");
+          toast.success(`Selamat datang${profile?.name ? `, ${profile.name}` : ""}!`);
+          redirectByRole(getPrimaryRole(userRoles?.map((item) => item.role) || []));
       } catch (err: any) {
         toast.error(err.message || "Gagal memuat profil");
         navigate("/");
       }
+    };
+
+    const getPrimaryRole = (roles: string[]) => {
+      if (roles.includes("admin")) return "admin";
+      if (roles.includes("partner") || roles.includes("supplier")) return "supplier";
+      return "buyer";
     };
 
     const redirectByRole = (role: string) => {
