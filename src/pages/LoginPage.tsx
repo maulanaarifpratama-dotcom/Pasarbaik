@@ -3,98 +3,142 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Lock } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 
 function LoginPage() {
+  const [mode, setMode] = useState<"magiclink" | "password">("magiclink");
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [appleLoading, setAppleLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
   const navigate = useNavigate();
 
-  const handleAppleSignIn = async () => {
-    setAppleLoading(true);
-    const { error } = await lovable.auth.signInWithOAuth("apple", {
-      redirect_uri: window.location.origin,
+  const handleMagicLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: !isLogin && name ? { full_name: name } : undefined,
+      },
     });
+
     if (error) {
-      toast.error(error.message || "Apple sign-in failed");
-      setAppleLoading(false);
+      toast.error(error.message || "Gagal mengirim magic link");
+      setLoading(false);
+      return;
     }
+
+    setMagicLinkSent(true);
+    toast.success("Magic link terkirim! Cek email kamu.");
+    setLoading(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePasswordAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     if (isLogin) {
-      const { data: signInData, error } = await signIn(email, password);
+      const { data: signInData, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
       if (error) {
         toast.error(error.message);
         setLoading(false);
         return;
       }
 
-      toast.success("Signed in successfully!");
+      toast.success("Berhasil masuk!");
 
-      const signedInUser = signInData?.user ?? (await supabase.auth.getUser()).data.user;
-
+      const signedInUser = signInData?.user;
       if (!signedInUser) {
         navigate("/");
         setLoading(false);
         return;
       }
 
-      const fetchRoles = async (attempt = 0): Promise<string[]> => {
-        const { data: roles, error: rolesError } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", signedInUser.id);
-
-        if (rolesError) {
-          throw rolesError;
-        }
-
-        const roleList = roles?.map((r) => r.role) || [];
-
-        if (roleList.length === 0 && attempt < 2) {
-          await new Promise((resolve) => setTimeout(resolve, 150));
-          return fetchRoles(attempt + 1);
-        }
-
-        return roleList;
-      };
-
-      try {
-        const roleList = await fetchRoles();
-
-        if (roleList.includes("admin")) navigate("/admin");
-        else if (roleList.includes("partner") || roleList.includes("supplier")) navigate("/partner");
-        else if (roleList.includes("editor")) navigate("/dashboard");
-        else navigate("/");
-      } catch (rolesError: any) {
-        toast.error(rolesError.message || "Failed to load user roles");
-        navigate("/");
-      }
+      await redirectByRole(signedInUser.id);
     } else {
-      const { error } = await signUp(email, password, name);
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: { full_name: name },
+        },
+      });
+
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success("Account created! Check your email to confirm.");
+        toast.success("Akun berhasil dibuat! Cek email untuk konfirmasi.");
       }
     }
 
     setLoading(false);
   };
+
+  const redirectByRole = async (userId: string) => {
+    try {
+      // Fetch role dari table profiles (primary source)
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", userId)
+        .single();
+
+      if (profileError) throw profileError;
+
+      const role = profile?.role || "buyer";
+
+      if (role === "admin") navigate("/admin");
+      else if (role === "supplier") navigate("/supplier");
+      else navigate("/marketplace"); // default: buyer
+    } catch (err: any) {
+      toast.error(err.message || "Gagal memuat data user");
+      navigate("/");
+    }
+  };
+
+  // State: magic link sudah terkirim
+  if (magicLinkSent) {
+    return (
+      <main className="pt-16 min-h-screen bg-background flex items-center justify-center">
+        <div className="w-full max-w-md mx-auto px-4">
+          <div className="bg-card rounded-xl border border-border shadow-sm p-8 text-center">
+            <div className="w-14 h-14 mx-auto rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+              <Mail className="text-primary" size={24} />
+            </div>
+            <h1 className="font-display text-2xl font-bold text-card-foreground">Cek Email Kamu</h1>
+            <p className="text-muted-foreground text-sm mt-2">
+              Kami sudah kirim magic link ke <strong>{email}</strong>. Klik link tersebut untuk masuk ke PasarBaik.
+            </p>
+            <p className="text-xs text-muted-foreground mt-4">
+              Link berlaku 1 jam. Tidak terima email? Cek folder spam.
+            </p>
+            <Button
+              variant="outline"
+              className="mt-6"
+              onClick={() => {
+                setMagicLinkSent(false);
+                setEmail("");
+              }}
+            >
+              Kembali
+            </Button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="pt-16 min-h-screen bg-background flex items-center justify-center">
@@ -104,57 +148,103 @@ function LoginPage() {
             <div className="w-14 h-14 mx-auto rounded-xl bg-primary/10 flex items-center justify-center mb-4">
               <Lock className="text-primary" size={24} />
             </div>
-            <h1 className="font-display text-2xl font-bold text-card-foreground">
-              {isLogin ? "Sign In" : "Create Account"}
-            </h1>
+            <h1 className="font-display text-2xl font-bold text-card-foreground">{isLogin ? "Masuk" : "Buat Akun"}</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {isLogin ? "Access the PasarBaik platform" : "Join the impact supply ecosystem"}
+              {isLogin ? "Masuk ke platform PasarBaik" : "Bergabung ke ekosistem impact supply"}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@example.com" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
-            </div>
-
-            <Button type="submit" className="w-full" size="lg" disabled={loading}>
-              {loading ? "Loading..." : isLogin ? "Sign In" : "Create Account"}
-            </Button>
-          </form>
-
-          <div className="flex items-center gap-3 my-5">
-            <Separator className="flex-1" />
-            <span className="text-xs text-muted-foreground">atau</span>
-            <Separator className="flex-1" />
+          {/* Toggle mode: magic link vs password */}
+          <div className="flex gap-1 p-1 bg-muted rounded-lg mb-6">
+            <button
+              type="button"
+              onClick={() => setMode("magiclink")}
+              className={`flex-1 text-sm py-2 rounded-md transition ${
+                mode === "magiclink" ? "bg-background shadow-sm font-medium" : "text-muted-foreground"
+              }`}
+            >
+              Magic Link
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("password")}
+              className={`flex-1 text-sm py-2 rounded-md transition ${
+                mode === "password" ? "bg-background shadow-sm font-medium" : "text-muted-foreground"
+              }`}
+            >
+              Password
+            </button>
           </div>
 
-          <Button
-            variant="outline"
-            className="w-full gap-2"
-            size="lg"
-            onClick={handleAppleSignIn}
-            disabled={appleLoading}
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
-              <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-            </svg>
-            {appleLoading ? "Loading..." : "Sign in with Apple"}
-          </Button>
+          {mode === "magiclink" ? (
+            <form onSubmit={handleMagicLink} className="space-y-4">
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nama Lengkap</Label>
+                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama kamu" />
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="email-magic">Email</Label>
+                <Input
+                  id="email-magic"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="email@contoh.com"
+                />
+              </div>
 
-          <div className="text-center mt-4">
+              <Button type="submit" className="w-full" size="lg" disabled={loading}>
+                {loading ? "Mengirim..." : "Kirim Magic Link"}
+              </Button>
+
+              <p className="text-xs text-muted-foreground text-center">
+                Kami akan kirim link ke email kamu. Tidak perlu password.
+              </p>
+            </form>
+          ) : (
+            <form onSubmit={handlePasswordAuth} className="space-y-4">
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="name-pw">Nama Lengkap</Label>
+                  <Input id="name-pw" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama kamu" />
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="email-pw">Email</Label>
+                <Input
+                  id="email-pw"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="email@contoh.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  minLength={6}
+                />
+              </div>
+
+              <Button type="submit" className="w-full" size="lg" disabled={loading}>
+                {loading ? "Memproses..." : isLogin ? "Masuk" : "Buat Akun"}
+              </Button>
+            </form>
+          )}
+
+          <div className="text-center mt-6">
             <button onClick={() => setIsLogin(!isLogin)} className="text-sm text-primary hover:underline">
-              {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+              {isLogin ? "Belum punya akun? Daftar" : "Sudah punya akun? Masuk"}
             </button>
           </div>
         </div>
