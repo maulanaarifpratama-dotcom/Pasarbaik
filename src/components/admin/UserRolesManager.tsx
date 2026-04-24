@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { Plus, Trash2, Shield, ShieldCheck, UserCheck, User } from "lucide-react";
 import type { AppRole } from "@/hooks/useUserRole";
+import { RolePermissionsMatrix } from "./RolePermissionsMatrix";
 
 const ALL_ROLES: AppRole[] = ["admin", "editor", "partner", "supplier", "buyer", "user"];
 
@@ -103,7 +104,10 @@ export function AdminUsers() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="font-display text-2xl font-bold text-foreground">Manage Users & Roles</h2>
+        <div>
+          <h2 className="font-display text-2xl font-bold text-foreground">Manajemen Role & Izin Pengguna</h2>
+          <p className="text-sm text-muted-foreground">Atur akses admin, editor, partner, supplier, buyer, dan user.</p>
+        </div>
       </div>
 
       {isLoading ? (
@@ -204,6 +208,8 @@ export function AdminUsers() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <RolePermissionsMatrix />
     </div>
   );
 }
