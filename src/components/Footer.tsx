@@ -62,7 +62,7 @@ function Footer() {
           </div>
         </div>
         <div className="border-t border-primary-foreground/10 mt-10 pt-6 text-center text-xs text-primary-foreground/50">
-          © 2026 PasarBaik. All rights reserved. Impact Supply Aggregator Platform by Immersia.
+          © 2022 - 2026 PasarBaik. All rights reserved. Impact Supply Aggregator Platform by Immersia.
         </div>
       </div>
     </footer>
